@@ -37,11 +37,9 @@
                             lea si,BALLX
                             lea di,BALLY
                         try: 
-                            ;mov bp,cx
-                            mov VAR1,si
-                            mov var2,di
-                          ; CALL CLEAR_SCREEN
-                        	CALL MOVE_BALL 
+                         mov VAR1,si
+                         mov var2,di
+                         CALL MOVE_BALL 
                           cmp bp,0
 						  je firstindex
 						  cmp bp,1

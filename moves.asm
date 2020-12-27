@@ -73,7 +73,7 @@
                                     ;  cmp cx,0h
                                     ;  je skip
                              inc bp
-                             cmp bp,10h         
+                             cmp bp,3h         
                             
                              jl try
                         CALL CLEAR_SCREEN    

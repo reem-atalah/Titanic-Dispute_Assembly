@@ -32,10 +32,11 @@ ENDM
 	WINDOW_WIDTH DW 140h   ;the width of the window (320 pixels)
 	WINDOW_HEIGHT DW 0C8h  ;the height of the window (200 pixels)
 	WINDOW_BOUNDS DW 6     ;variable used to check collisions early
-	BALLX dw 0AH,45H,65h ,13h,15h,18h
-    BALLY dw 0AH,45H,65h,13h,15h,18h
+	BALLX dw 0AH,45H,65h ,13h,20h,70h
+    BALLY dw 0AH,01H,03h,10h,15h,24h
 	TIME_AUX DB 0 ;variable used when checking if the time has changed
-	
+	VecloictyX dw 01h,01h,01h,01h,01h,01H
+    VecloictyY dw 02h,02h,02h,02h,02h,02h
 	BALL_X DW 0Ah ;X position (column) of the ball
 	BALL_Y DW 0Ah ;Y position (line) of the ball
 	BALL_SIZE DW 04h ;size of the ball (how many pixels does the ball have in width and height)
@@ -43,6 +44,7 @@ ENDM
 	BALL_VELOCITY_Y DW 02h ;Y (vertical) velocity of the ball
    VAR1 DW ?
    VAR2 DW ?
+   Varbp dw ?
     ;;;;
     PADDLE_LEFT_X DW 0Ah
 	PADDLE_LEFT_Y DW 0Ah
@@ -71,7 +73,7 @@ ENDM
                     mov Time,dl
 					CALL CLEAR_SCREEN  
                      
-                       mov bp,0h
+                        mov bp,0h
                         Drawnewball: 
                             ;six balls    
                             lea si,BALLX
@@ -79,14 +81,15 @@ ENDM
                         try: 
                          mov VAR1,si ; store index  position of x
                          mov var2,di ; store index position of y
+                         mov Varbp,bp
                          CALL MOVE_BALL  ; here si,di changes so i need to know where was my postion so i can get it from var1,var2
                     				  
                                  mov si,var1 ; index position of x
                                  mov di,var2 ; index postion of y
                                  add si,2h ; next index of x
                                  add di,2h ;next index of y
-                             inc bp  ; counter
-                             cmp bp,6h  ;size of array              
+                             add bp,2  ; counter
+                             cmp bp,0Ch  ;size of array              
                              jl try
 					
                          mov bp,0           ;draw
@@ -101,39 +104,20 @@ ENDM
                             mov di,var2
                             add si,2h
                             add di,2h
-                            inc bp
-                            cmp bp,6h          
+                            add bp,2
+                            cmp bp,0Ch          
                             jL try1
                             mov bp,0h
                             lea si,BALLX
                             lea di,BALLY
                             Jmp check
 		
-		; CHECK_TIME:
-		
-		; 	MOV AH,2Ch ;get the system time
-		; 	INT 21h    ;CH = hour CL = minute DH = second DL = 1/100 seconds
-			
-		; 	CMP DL,TIME_AUX  ;is the current time equal to the previous one(TIME_AUX)?
-		; 	JE CHECK_TIME    ;if it is the same, check again
-		; 	;if it's different, then draw, move, etc.
-			
-		; 	MOV TIME_AUX,DL ;update time
-			
-		; 	;CALL CLEAR_SCREEN
-			
-		; 	CALL MOVE_BALL
-		; 	CALL DRAW_BALL 
-			
-		; 	JMP CHECK_TIME ;after everything checks time again
-		
-		; RET
 	MAIN ENDP
 	
 	MOVE_BALL PROC NEAR
      
-		
-		MOV AX,BALL_VELOCITY_X    
+		mov bx,Varbp
+		MOV AX,VecloictyX+bx  
 		ADD [si],AX             ;move the ball horizontally
 		
 		MOV AX,WINDOW_BOUNDS
@@ -147,7 +131,7 @@ ENDM
 		JG NEG_VELOCITY_X
 		
 		
-		MOV AX,BALL_VELOCITY_Y
+		MOV AX,VecloictyY+bx
 		ADD [di],AX             ;move the ball vertically
 		
 		MOV AX,WINDOW_BOUNDS
@@ -163,11 +147,11 @@ ENDM
 		RET
 		
 		NEG_VELOCITY_X:
-			NEG BALL_VELOCITY_X   ;BALL_VELOCITY_X = - BALL_VELOCITY_X
+			NEG VecloictyX+bx   ;BALL_VELOCITY_X = - BALL_VELOCITY_X
 			RET
 			
 		NEG_VELOCITY_Y:
-			NEG BALL_VELOCITY_Y   ;BALL_VELOCITY_Y = - BALL_VELOCITY_Y
+			NEG VecloictyY+bx   ;BALL_VELOCITY_Y = - BALL_VELOCITY_Y
 			RET
 		
 	MOVE_BALL ENDP

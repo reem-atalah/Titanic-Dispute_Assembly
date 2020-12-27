@@ -27,6 +27,8 @@ ENDM
 
 .DATA 
 	
+	Time DB 0 
+    ;Timeafter db 10
 	WINDOW_WIDTH DW 140h   ;the width of the window (320 pixels)
 	WINDOW_HEIGHT DW 0C8h  ;the height of the window (200 pixels)
 	WINDOW_BOUNDS DW 6     ;variable used to check collisions early
@@ -62,9 +64,14 @@ ENDM
 		
 		CALL CLEAR_SCREEN
          
-      
-          mov cx,3h  
-          mov bp,0h
+           Check: mov ah,2ch
+                    int 21h ; CH = hour CL = minute DH = second DL = 1/100 seconds
+                    CMP DL,Time
+                    je Check
+                    mov Time,dl
+					CALL CLEAR_SCREEN  
+                     
+                       mov bp,0h
                         Drawnewball: 
                             ;six balls    
                             lea si,BALLX
@@ -81,10 +88,7 @@ ENDM
                              inc bp  ; counter
                              cmp bp,6h  ;size of array              
                              jl try
-							 ;CALL MOve_Paddel 
-                             ; Drawpaddel PADDLE_LEFT_X,PADDLE_LEFT_Y,PADDLE_WIDTH,PADDLE_HEIGHT ; YOU CAN stop it to see the balls only
-                             ;Drawpaddel PADDLE_RIGHT_X,PADDLE_RIGHT_Y,PADDLE_WIDTH,PADDLE_HEIGHT ; YOU STop it to see the balls 
-							 ;CALL MOve_Paddel
+					
                          mov bp,0           ;draw
                          lea si,BALLX
                          lea di,BALLY
@@ -103,8 +107,7 @@ ENDM
                             mov bp,0h
                             lea si,BALLX
                             lea di,BALLY
-							CALL CLEAR_SCREEN  
-                            Jmp try
+                            Jmp check
 		
 		; CHECK_TIME:
 		

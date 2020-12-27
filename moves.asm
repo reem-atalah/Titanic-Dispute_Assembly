@@ -57,60 +57,33 @@
 						 thridindex: MOV BALLX[2],si
 						            MOV BALLY[2],di
 									JMP EXCHNAGE					  
-                              
-                          
-                            
-                           
-                           ; xchg bp,cx
                          EXCHNAGE:mov si,var1
-                             mov di,var2
-                             
-                            
-                             
-                                     add si,2h
-                                     add di,2h
-                                    ;  dec cx
-                                    ;  cmp cx,0h
-                                    ;  je skip
+                                 mov di,var2
+                                 add si,2h
+                                 add di,2h
                              inc bp
-                             cmp bp,3h         
-                            
+                             cmp bp,3h               
                              jl try
-                        CALL CLEAR_SCREEN    
-                        mov bp,0     
-                        move3: 
-                                
-                            lea si,BALLX
-                            lea di,BALLY
+                         CALL CLEAR_SCREEN    
+                         mov bp,0           
+                         lea si,BALLX
+                         lea di,BALLY
                         try1: 
-                            ;mov bp,cx
+    
                             mov VAR1,si
                             mov var2,di
-                          
                         	CALL DRAW_BALL
-                              
-                            
-                            
-                           
-                           ; xchg bp,cx
-                             mov si,var1
-                             mov di,var2
-                             
-                            
-                             
-                                     add si,2h
-                                     add di,2h
-                                    ;  dec cx
-                                    ;  cmp cx,0h
-                                    ;  je skip
-                             inc bp
-                             cmp bp,3h         
-                    
-                             jL try1
-                             mov bp,0h
-                             lea si,BALLX
-                              lea di,BALLY
-                             Jmp try
+                            mov si,var1
+                            mov di,var2
+                            add si,2h
+                            add di,2h
+                            inc bp
+                            cmp bp,3h          
+                            jL try1
+                            mov bp,0h
+                            lea si,BALLX
+                            lea di,BALLY
+                            Jmp try
 		
 		; CHECK_TIME:
 		

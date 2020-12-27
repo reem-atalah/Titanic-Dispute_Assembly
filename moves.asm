@@ -7,8 +7,8 @@
 	WINDOW_WIDTH DW 140h   ;the width of the window (320 pixels)
 	WINDOW_HEIGHT DW 0C8h  ;the height of the window (200 pixels)
 	WINDOW_BOUNDS DW 6     ;variable used to check collisions early
-	BALLX dw 0AH,45H,65h 
-    BALLY dw 0AH,45H,65h
+	BALLX dw 0AH,45H,65h ,13h,15h,18h
+    BALLY dw 0AH,45H,65h,13h,15h,18h
 	TIME_AUX DB 0 ;variable used when checking if the time has changed
 	
 	BALL_X DW 0Ah ;X position (column) of the ball
@@ -40,29 +40,15 @@
                          mov VAR1,si
                          mov var2,di
                          CALL MOVE_BALL 
-                          cmp bp,0
-						  je firstindex
-						  cmp bp,1
-						  je secondindex
-						  cmp bp,2
-						  je thridindex
-						 firstindex:mov BALLX[0],si
-						            MOV BALLY[0],di
-									JMP EXCHNAGE
-						 secondindex:MOV BALLX[1],si
-						           	 MOV BALLY[1],di
-									 JMP EXCHNAGE
-						 thridindex: MOV BALLX[2],si
-						            MOV BALLY[2],di
-									JMP EXCHNAGE					  
-                         EXCHNAGE:mov si,var1
+                    				  
+                                 mov si,var1
                                  mov di,var2
                                  add si,2h
                                  add di,2h
                              inc bp
-                             cmp bp,3h               
+                             cmp bp,6h               
                              jl try
-                         CALL CLEAR_SCREEN    
+                           
                          mov bp,0           
                          lea si,BALLX
                          lea di,BALLY
@@ -76,11 +62,12 @@
                             add si,2h
                             add di,2h
                             inc bp
-                            cmp bp,3h          
+                            cmp bp,6h          
                             jL try1
                             mov bp,0h
                             lea si,BALLX
                             lea di,BALLY
+							CALL CLEAR_SCREEN  
                             Jmp try
 		
 		; CHECK_TIME:

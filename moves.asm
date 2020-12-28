@@ -46,6 +46,16 @@ Drawpaddel MACRO BALLX2,BALLY2,BALLwidth,Ballheight
         
     
 ENDM
+staticWave macro y, x ;x, y relate to the waves position
+   local whileWaveBeingDrawn
+   mov ah,0ch
+    mov bx, offset wave
+    whileWaveBeingDrawn:
+       drawDynamicPixel [bx],[bx+1],[bx+2], y, x
+       add bx,3
+       cmp bx,offset waveSize
+    JNE whileWaveBeingDrawn
+ endm staticWave
 drawDynamicPixel macro column, row, color, Y_t, X_t ;x, y, color...the last two parameters are the dynamic position of the pixel
         xor ch,ch
         xor dh,dh
@@ -57,6 +67,14 @@ drawDynamicPixel macro column, row, color, Y_t, X_t ;x, y, color...the last two 
         add cx, X_t
         int 10h
 ENDM drawDynamicPixel
+blankScreen macro color
+	mov ah,06 ;Scroll (Zero lines anyway)
+    mov al,00h ;to blank the screen
+	mov bh,color  ;color to blank the screen with
+	mov cx,0000h  ;start from row 0, column 0
+	mov dx,184fh ;to the end of the screen
+	int 10h
+ENDM blankScreen
  .MODEL SMALL
     .STACK 64
 
@@ -134,14 +152,16 @@ ENDM drawDynamicPixel
        DisplayString Msg2
 		
 	     CALL CLEAR_SCREEN
-         
+           blankScreen 15
+         staticWave 100,160
          Check: mov ah,2ch
                      int 21h ; CH = hour CL = minute DH = second DL = 1/100 seconds
                      CMP DL,Time
                      je Check
                      mov Time,dl
 		 			CALL CLEAR_SCREEN  
-                     
+                       blankScreen 15
+                      staticWave 100,160
                          mov bp,0h
                          Drawnewball: 
                              ;six balls    

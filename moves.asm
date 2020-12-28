@@ -323,8 +323,10 @@ shield db 26,2,4
                      je Check
                      mov Time,dl
 		 			  
-                         blankScreen 15
+                        blankScreen 15
                         staticWave 100,160
+                        CALL  drawShieldRight
+                        CALL drawShieldLeft
                          mov bp,0h
                          Drawnewball: 
                              ;six balls    

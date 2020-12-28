@@ -406,6 +406,22 @@ endm resetPosition
     Pl_y dw 50
     Pr_x dw 265
     Pr_y dw 50
+    	
+	Time DB 0 
+    ;Timeafter db 10
+	WINDOW_WIDTH DW 140h   ;the width of the window (320 pixels)
+	WINDOW_HEIGHT DW 0C8h  ;the height of the window (200 pixels)
+	WINDOW_BOUNDS DW 6     ;variable used to check collisions early
+	BALLX dw 0AH,45H,65h ,1ch,2Bh,70h
+    BALLY dw 0AH,0FH,12h,0Eh,1eh,2Ch
+	TIME_AUX DB 0 ;variable used when checking if the time has changed
+	VecloictyX dw 01h,01h,01h,01h,01h,01H
+    VecloictyY dw 02h,02h,02h,02h,02h,02h
+	BALL_X DW 0Ah ;X position (column) of the ball
+	BALL_Y DW 0Ah ;Y position (line) of the ball
+	;BALL_SIZE DW 04h ;size of the ball (how many pixels does the ball have in width and height)
+	BALL_VELOCITY_X DW 05h ;X (horizontal) velocity of the ball
+	BALL_VELOCITY_Y DW 02h ;Y (vertical) velocity of the ball
     ;P_width dw 02
     ;P_height dw 50
     P_Velocity dw 20
@@ -952,7 +968,8 @@ shipRightSize dw 171
                           mov storeSI,si ; store index  position of x
                           mov storeDI,di ; store index position of y
                           mov storeBP,bp
-                          Motion V_x+BP,V_y+BP
+                         ; Motion V_x+BP,V_y+BP
+                         CALL MOVE_BALL
                          
                            ; here si,di changes so i need to know where was my postion so i can get it from storeSI,storeDI
                         ;   checkrightpaddel   Pr_y,Pr_X,P_width,P_height,BALL_SIZE

@@ -1,3 +1,4 @@
+
 DisplayString macro Stringo
     mov AH,09h
     mov dx,offset Stringo
@@ -180,25 +181,24 @@ endm getSystemTime
 
 
 
-Motion macro V_x, V_y ;Pass horizontal and vertical velocities (i.e. position changes that should applied every centisecond in the main loop)
+Motion macro ;V_x, V_y ;Pass horizontal and vertical velocities (i.e. position changes that should applied every centisecond in the main loop)
 
     ;Trigger the desired motion along x
-    mov ax,V_x
-    add S_x,ax ;Add V_x to S_x (done every centisecond >> velocity)
-
+    mov ax, V_x+BP
+    add [SI], ax ;Add V_x to S_x (done every centisecond >> velocity)
     ;Check vertical walls and do necessary action if colliding with any
-    cmp S_x,10h
-    JL Disappear
-    cmp S_x,310;320 (from resolution)-Ball_size - some_margin
-    JG Disappear
+    cmp [SI], 10h
+    JL reverse_Velocity_x
+    cmp [SI], 310;320 (from resolution)-Ball_size - some_margin
+    JG reverse_Velocity_X
 
     ;Trigger the desired motion along y
-    mov ax,V_y ;Moving the ball for 5 pixels along y=x whenever a centisecond passes (velocity = 5 px/cs)
-    add S_y,ax
+    mov ax, V_y+BP ;Moving the ball for 5 pixels along y=x whenever a centisecond passes (velocity = 5 px/cs)
+    add [DI], ax
    ;check horizontal walls and do necessary action if colliding with any
-    cmp S_y,10h
+    cmp [SI], 10h
     JL Reverse_Velocity_Y
-    cmp S_y,170 ;200 (from resolution) - Ball_size - some_margin
+    cmp [DI], 170 ;200 (from resolution) - Ball_size - some_margin
     JG Reverse_Velocity_Y
 
     call checkRightShieldCollisions ;Escapes to done if non detected, does necessary action otherwise
@@ -208,21 +208,17 @@ JMP Done ;If none of the above was satisfied, do nothing.
     
     ;But in case any was satisified:
         Reverse_Velocity_X:
-        neg V_x ;Finding the 2's complementing (multiplying by -1)
+        neg V_x+BP ;Finding the 2's complementing (multiplying by -1)
         JMP Done
-
         Reverse_Velocity_Y:
-        neg V_y
+        neg V_y+BP
         JMP Done
-
         Reset_Position: ;Don't think we'll need this
             resetPosition 0,0
             JMP Done 
-
         Disappear:
             mov al,00h
             mov colorBall,al
-
     Done:
 
 endm Motion
@@ -355,33 +351,33 @@ endm resetPosition
     inc cx
     inc dx
     mov ah,0ch
-    mov SI, offset wave
+    mov BX, offset wave
     whileWavesBeingDrawn:
-       drawDynamicPixel [SI],[SI+1],[SI+2], y, x
-       add SI,3
-       cmp SI,offset waveSize
+       drawDynamicPixel [BX],[BX+1],[BX+2], y, x
+       add BX,3
+       cmp BX,offset waveSize
     JNE whileWavesBeingDrawn
     endm staticWave
 
     staticShipLeft macro y, x ;x, y relate to the waves position
    local whileShipBeingDrawn
    mov ah,0ch
-    mov SI, offset shipLeft
+    mov BX, offset shipLeft
     whileShipBeingDrawn:
-       drawDynamicPixel [SI],[SI+1],[SI+2], y, x
-       add SI,3
-       cmp SI,offset shipLeftSize
+       drawDynamicPixel [BX],[BX+1],[BX+2], y, x
+       add BX,3
+       cmp BX,offset shipLeftSize
     JNE whileShipBeingDrawn
        endm staticShipLeft
        
     staticShipRight macro y, x ;x, y relate to the waves position
    local whileShipisBeingDrawn
    mov ah,0ch
-    mov SI, offset shipRight
+    mov BX, offset shipRight
     whileShipisBeingDrawn:
-       drawDynamicPixel [SI],[SI+1],[SI+2], y, x
-       add SI,3
-       cmp SI,offset shipRightSize
+       drawDynamicPixel [BX],[BX+1],[BX+2], y, x
+       add BX,3
+       cmp BX,offset shipRightSize
     JNE whileShipisBeingDrawn
        endm staticShipRight
        
@@ -394,11 +390,17 @@ endm resetPosition
 .STACK 64   
 .DATA
     ;Data variables relating to the ball
-
-    S_x dw 100 ;x position of the ball
-    S_y dw 30 ;y position of the ball
-    V_x dw 3H ;Horizontal Velocity
-    V_y dw 3H ;Vertical Velocity
+	WINDOW_WIDTH DW 140h   ;the width of the window (320 pixels)
+	WINDOW_HEIGHT DW 0C8h  ;the height of the window (200 pixels)
+	WINDOW_BOUNDS DW 6     ;variable used to check collisions early
+    S_x dw 100,150,200 ;x position of the ball
+    S_y dw 30,40,30 ;y position of the ball
+    V_x dw 2H,6H,5h ;Horizontal Velocity
+    V_y dw 1H,5H,7h ;Vertical Velocity
+    storeSI dw ?
+    storeDI dw ?
+    storeBP dw ?
+    ballCount dw 6h
     colorBall db 0eh
     ;Ball_Size dw 20h; height, width of the ball 
     Centiseconds db 0;To check if a centisecond has passed.
@@ -911,8 +913,6 @@ db 27,167,16,28,167,16,29,167,16,30,167,16,31,167,16,32,167,16,33,167,16
 shipRightSize dw 171 
  
 
-
-
 .Code
     MAIN PROC FAR 
     MOV AX,@Data
@@ -939,18 +939,51 @@ shipRightSize dw 171
     JE whileTime 
     ;if a centisecond passes (won't be triggered for any less time)
     mov Centiseconds,dl ;centisecond(s) has passed update the time variable with the new time.
-    Motion V_x, V_y ;Call the velocity macro, note that it deals with collisions inside.
+    ;Motion V_x, V_y ;Call the velocity macro, note that it deals with collisions inside.
     blankScreen 104,5,34 ;Color, from, to (on the x-axis)
     staticWave 100,160,A
     staticWave 50,50,B
     staticWave 200,320,B
     staticWave 150,180,B
+    ;call drawBall
+     mov bp,0h
+    ;six balls    
+                        lea SI,S_x
+                        lea DI,S_y
+                         loopBalls:
+                          mov storeSI,si ; store index  position of x
+                          mov storeDI,di ; store index position of y
+                          mov storeBP,bp
+                          ;Motion ;V_x +BP, V_y+BP
+                          call move_ball
+                           ; here si,di changes so i need to know where was my postion so i can get it from storeSI,storeDI
+                        ;   checkrightpaddel   Pr_y,Pr_X,P_width,P_height,BALL_SIZE
+                            mov si,storeSI ; index position of x
+                            mov di,storeDI ; index postion of y
+                            add si,2h ; next index of x
+                            add di,2h ;next index of y
+                            add bp,2  ; counter
+                            cmp bp,ballCount  ;size of array              
+                          jl loopBalls
 
-    call drawBall
+                        mov bp,0           ;draw
+                        lea si,S_x
+                        lea di,S_y
+                         drawBalls: 
+                            mov storeSI,si
+                            mov storeDI,di
+                        	CALL DRAWBALL
+                            mov si,storeSI
+                            mov di,storeDI
+                            add si,2h
+                            add di,2h
+                            add bp,2
+                            cmp bp,ballCount
+                        jL drawBalls
     shieldControlFirst Pr_y,4Dh,4Bh ;control Pr_y up and down with right and left arrows.
     shieldControlSecond Pl_y,0fh,10h ;control Pl_y up and down with Tab and Q.
     call drawShieldLeft 
-    call drawShieldRight  
+    call drawShieldRight
     jmp whileTime
     return
     MAIN ENDP 
@@ -979,33 +1012,33 @@ shipRightSize dw 171
     
    drawBall proc near
    mov ah,0ch
-    mov SI, offset ball
+    mov BX, offset ball
     whilePixels:
-       drawDynamicPixel [SI],[SI+1],[SI+2], S_y, S_x
-       add SI,3
-       cmp SI,offset Ball_Size
+       drawDynamicPixel [BX],[BX+1],[BX+2], [DI],[SI]
+       add BX,3
+       cmp BX,offset Ball_Size
     JNE whilePixels
    ret
    drawBall endp
    
       drawShieldLeft proc near
    mov ah,0ch
-    mov SI, offset shield
+    mov BX, offset shield
     whileBeingDrawn:
-       drawDynamicPixel [SI],[SI+1],[SI+2], Pl_y, Pl_x
-       add SI,3
-       cmp SI,offset P_height
+       drawDynamicPixel [BX],[BX+1],[BX+2], Pl_y, Pl_x
+       add BX,3
+       cmp BX,offset P_height
     JNE whileBeingDrawn
    ret
    drawShieldLeft endp
 
    drawShieldRight proc near
    mov ah,0ch
-    mov SI, offset rightShield
+    mov BX, offset rightShield
     whileRightShieldBeingDrawn:
-       drawDynamicPixel [SI],[SI+1],[SI+2], Pr_y, Pr_x
-       add SI,3
-       cmp SI,offset rightShieldSize
+       drawDynamicPixel [BX],[BX+1],[BX+2], Pr_y, Pr_x
+       add BX,3
+       cmp BX,offset rightShieldSize
     JNE whileRightShieldBeingDrawn
    ret
    drawShieldRight endp
@@ -1018,27 +1051,27 @@ checkLeftShieldCollisions proc near
     ; M is the left shield and N is the ball                                 
     mov ax,Pl_x
     add ax,P_width
-    cmp ax,S_x
+    cmp ax,[SI]
     JNG bye ;first condition not satisified, no need to check anymore.
 
-    mov ax,S_x
+    mov ax,[SI]
     add ax,Ball_Size
     cmp ax,Pl_X
     JNG bye ;second condition
 
     mov ax,Pl_y
     add ax,P_height
-    cmp ax,S_y
+    cmp ax,[DI]
     JNG bye
 
-    mov ax,S_y
+    mov ax,[DI]
     add ax,Ball_Size
-    cmp ax, Pl_y
+    cmp ax,Pl_y
     JNG bye
     ;Reaching this point indicates that the conditions are satisified.
-    Neg V_x
-    mov ax,3
-    add V_y,ax ;Widening the angle of reflection
+    mov bx,storeBP
+    NEG V_x+bx
+    
     bye: ;Do nothing if none is satisfied
     ret
  checkLeftShieldCollisions endp
@@ -1047,37 +1080,80 @@ checkrightShieldCollisions proc near
     ;Check collisions with the right shield and do necessary action based on that
     ;(M.x+M.width>=N.x && M.x<=N.x+N.width && M.y+M.height>=N.y && M.y<=N.y+N.height) indicates a collision as we've demonstrated below (if any isn't satisified we escape)
     ; M is the ball and N is the right shield                                  
-    mov ax,S_x
+    mov ax,[SI]
     add ax,ball_Size
     cmp ax,Pr_x
     JNG exit ;first condition not satisified, no need to check anymore.
 
     mov ax,Pr_X
     add ax,P_width
-    cmp ax,S_x
+    cmp ax,[SI]
     JNG exit ;second condition
 
-    mov ax,S_y
+    mov ax,[DI]
     add ax,ball_size
     cmp ax,Pr_y
     JNG exit
 
     mov ax,Pr_y
     add ax,P_height
-    cmp ax, S_y
+    cmp ax, [DI]
     JNG exit
     ;Reaching this point indicates that the conditions are satisified.
-    Neg V_x
-    mov ax,3
-    add V_y,ax ;Widening the angle of reflection
+    mov bx,storeBP
+    NEG V_x+bx
     exit:
     ret
  checkrightShieldCollisions endp
 
+
+	MOVE_BALL PROC NEAR
+     
+		mov bx, StoreBP
+		MOV AX,V_x+bx  
+		ADD [si],AX             ;move the ball horizontally
+		
+		MOV AX,WINDOW_BOUNDS
+		CMP  [si],AX                         
+		JL NEG_VELOCITY_X         ;BALL_X < 0 + WINDOW_BOUNDS (Y -> collided)
+		
+		MOV AX,WINDOW_WIDTH
+		SUB AX,BALL_SIZE
+		SUB AX,WINDOW_BOUNDS
+		CMP [si],AX	          ;BALL_X > WINDOW_WIDTH - BALL_SIZE  - WINDOW_BOUNDS (Y -> collided)
+		JG NEG_VELOCITY_X
+		
+		
+		MOV AX,V_Y+bx
+		ADD [di],AX             ;move the ball vertically
+		
+		MOV AX,WINDOW_BOUNDS
+		CMP [di],AX   ;BALL_Y < 0 + WINDOW_BOUNDS (Y -> collided)
+		JL NEG_VELOCITY_Y                          
+		
+		MOV AX,WINDOW_HEIGHT	
+		SUB AX,BALL_SIZE
+		SUB AX,WINDOW_BOUNDS
+		CMP [di],AX
+		JG NEG_VELOCITY_Y		  ;BALL_Y > WINDOW_HEIGHT - BALL_SIZE - WINDOW_BOUNDS (Y -> collided)
+		
+		jmp goodBye
+		
+		NEG_VELOCITY_X:
+			NEG V_x+bx   ;BALL_VELOCITY_X = - BALL_VELOCITY_X
+			jmp goodBye
+			
+		NEG_VELOCITY_Y:
+			NEG V_y+bx   ;BALL_VELOCITY_Y = - BALL_VELOCITY_Y
+			jmp goodBye
+		
+        goodBye:
+call checkrightShieldCollisions
+call checkleftShieldCollisions
+ret
+	MOVE_BALL ENDP
+
 END MAIN 
-
-
-
 
 ;Dynamic Collisions:
 ;Axis alligned bounding box collision: Can be done when The two colliding objects have their axes alligned with each other.

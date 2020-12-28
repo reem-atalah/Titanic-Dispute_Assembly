@@ -20,7 +20,7 @@ def RGBto8bit(Pixels): #This will be given RGB pixels and will return 8-bit ones
 
 def imageToAssembly():
     textFile = open("Image.txt", "a") #Opening Image.txt to write on it the commands that describe the image. ("w" for append mode) 
-    thumbinal = Image.open('Scaled.png') #So that you recall that you need to scale the image to the preffered size first.
+    thumbinal = Image.open('shield.png') #So that you recall that you need to scale the image to the preffered size first.
     Pixels = numpy.array(thumbinal) #Converting the RGB image to pixels, each pixel corresponds to three valus
      #Converting the image from RGB to 8-bit pixels to be suitable for view on assembly:
     Pixels=RGBto8bit(Pixels)
@@ -38,8 +38,8 @@ def imageToAssembly():
         textFile.seek(textFile.tell()-1, os.SEEK_SET)
         textFile.truncate()        
         if(y != len(Pixels)-1):
-            textFile.write("\ndb ")
-    textFile.write("\nimageSize db {} \n ".format(len(Pixels)))
+            textFile.write("\ndb ") 
+    textFile.write("\nimageSize dw {} \n ".format(len(Pixels))) #Reem changed from db => dw
 
 imageToAssembly()
 

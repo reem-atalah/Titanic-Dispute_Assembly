@@ -380,9 +380,12 @@ shield db 26,2,4
                           mov VAR1,si ; store index  position of x
                           mov var2,di ; store index position of y
                           mov Varbp,bp
-                        checkleftpaddel   Pl_y,Pl_x,P_width,P_height,BALL_SIZE
-
-                          CALL MOVE_BALL  ; here si,di changes so i need to know where was my postion so i can get it from var1,var2
+                        
+                        
+                          CALL MOVE_BALL 
+                            CALL checkright
+                          CALL checkleft
+                           ; here si,di changes so i need to know where was my postion so i can get it from var1,var2
                         ;   checkrightpaddel   Pr_y,Pr_X,P_width,P_height,BALL_SIZE
 		  
                                   mov si,var1 ; index position of x
@@ -606,6 +609,56 @@ drawShieldLeft proc near
     JNE whileRightShieldBeingDrawn
    ret
 drawShieldRight endp
+;description
+checkright PROC
+    
+          mov ax,[si] 
+          ADD AX,BALL_SIZE
+          CMP  AX,Pr_X
+          JNG CLOSE1
+          mov ax,Pr_x
+          add ax,P_Width
+          cmp [si],ax
+          jnl CLOSE1
+          MOV AX,[di]
+          ADD AX,BALL_SIZE
+          CMP AX,Pr_y
+          JNG CLOSE1
+          MOv AX,Pr_y
+          ADD AX,P_height
+          CMp [di],AX
+          jnl CLOSE1
+          CALL NEG_VecloityXofball
+          
+        CLOSE1:       
+
+    
+checkright ENDP
+;description
+checkleft PROC
+      
+          mov ax,[si]
+          ADD AX,BALL_SIZE
+          CMP  AX,Pl_X
+          JNG CLOSE3 ;;;;
+          mov ax,Pl_x
+          add ax,P_width
+          cmp [si],ax
+          jnl CLOSE3 ;;;;;;;;
+          MOV AX,[di]
+          ADD AX,BALL_SIZE
+          CMP AX,Pl_y
+          JNG CLOSE3 
+          MOv AX,Pl_y
+          ADD AX,P_height
+          CMp [di],AX
+         jnl CLOSE3;;;;
+          CALL NEG_VecloityXofball
+          
+          
+        CLOSE3: 
+    
+checkleft ENDP
 NEG_VecloityXofball PROC
     mov bx,Varbp
     NEG VecloictyX+bx  

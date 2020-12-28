@@ -380,11 +380,12 @@ shield db 26,2,4
                           mov VAR1,si ; store index  position of x
                           mov var2,di ; store index position of y
                           mov Varbp,bp
-                        
+                          CALL checkright
+                          CALL checkleft
                         
                           CALL MOVE_BALL 
-                            CALL checkright
-                          CALL checkleft
+                        ; CALL checkright
+                          ;CALL checkleft
                            ; here si,di changes so i need to know where was my postion so i can get it from var1,var2
                         ;   checkrightpaddel   Pr_y,Pr_X,P_width,P_height,BALL_SIZE
 		  
@@ -618,16 +619,16 @@ checkright PROC
           JNG CLOSE1
           mov ax,Pr_x
           add ax,P_Width
-          cmp [si],ax
-          jnl CLOSE1
+          cmp ax,[si]
+          jng CLOSE1
           MOV AX,[di]
           ADD AX,BALL_SIZE
           CMP AX,Pr_y
           JNG CLOSE1
           MOv AX,Pr_y
           ADD AX,P_height
-          CMp [di],AX
-          jnl CLOSE1
+          CMp AX,[di]
+          jng CLOSE1
           CALL NEG_VecloityXofball
           
         CLOSE1:       
@@ -643,16 +644,16 @@ checkleft PROC
           JNG CLOSE3 ;;;;
           mov ax,Pl_x
           add ax,P_width
-          cmp [si],ax
-          jnl CLOSE3 ;;;;;;;;
+          cmp ax,[si]
+          jng CLOSE3 ;;;;;;;;
           MOV AX,[di]
           ADD AX,BALL_SIZE
           CMP AX,Pl_y
           JNG CLOSE3 
           MOv AX,Pl_y
           ADD AX,P_height
-          CMp [di],AX
-         jnl CLOSE3;;;;
+          CMp AX,[di]
+         jng CLOSE3;;;;
           CALL NEG_VecloityXofball
           
           

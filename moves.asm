@@ -80,7 +80,11 @@ ENDM blankScreen
 
 
 .DATA 
-	
+	colorShield db 0h
+    Pl_x dw 25
+    Pl_y dw 50
+    Pr_x dw 255
+    Pr_y dw 50
 	Time DB 0 
     ;Timeafter db 10
 	WINDOW_WIDTH DW 140h   ;the width of the window (320 pixels)
@@ -418,6 +422,27 @@ MOve_Paddel PROC
                 
     
 MOve_Paddel ENDP
+drawShieldLeft proc near
+   mov ah,0ch
+    mov bx, offset shield
+    whileBeingDrawn:
+       drawDynamicPixel [bx],[bx+1],[bx+2], Pl_y, Pl_x
+       add bx,3
+       cmp bx,offset P_height
+    JNE whileBeingDrawn
+   ret
+   drawShieldLeft endp
+
+   drawShieldRight proc near
+   mov ah,0ch
+    mov bx, offset rightShield
+    whileRightShieldBeingDrawn:
+       drawDynamicPixel [bx],[bx+1],[bx+2], Pr_y, Pr_x
+       add bx,3
+       cmp bx,offset rightShieldSize
+    JNE whileRightShieldBeingDrawn
+   ret
+   drawShieldRight endp
 
 
 END MAIN

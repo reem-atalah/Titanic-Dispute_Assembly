@@ -195,15 +195,15 @@ waveSize dw 100
        DisplayString Msg2
 		
 	     CALL CLEAR_SCREEN
-           blankScreen 15
-         staticWave 100,160
+          ;blankScreen 15
+         ;staticWave 100,160
          Check: mov ah,2ch
                      int 21h ; CH = hour CL = minute DH = second DL = 1/100 seconds
                      CMP DL,Time
                      je Check
                      mov Time,dl
-		 			 ;CALL CLEAR_SCREEN  
-                         ;blankScreen 15
+		 			 CALL CLEAR_SCREEN  
+                        ; blankScreen 15
                         ;staticWave 100,160
                          mov bp,0h
                          Drawnewball: 

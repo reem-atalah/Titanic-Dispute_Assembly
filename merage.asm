@@ -42,9 +42,51 @@ Drawpaddel MACRO BALLX2,BALLY2,BALLwidth,Ballheight
         cmp ax,Ballheight
         jng Draw1
   
-
-        
-    
+ENDM
+checkrightpaddel MACRO PADDLE_right_Y,PADDLE_RIGHT_X,PADDLE_WIDTH,PADDLE_HEIGHT,BALLSize1
+        LOCAL CLOSE1
+          mov ax,[si] 
+          ADD AX,BALLSize1
+          CMP  AX,PADDLE_RIGHT_X
+          JNG CLOSE1
+          mov ax,PADDLE_RIGHT_X
+          add ax,PADDLE_WIDTH
+          cmp [si],ax
+          jnl CLOSE1
+          MOV AX,[di]
+          ADD AX,BALLSize1
+          CMP AX,PADDLE_right_Y
+          JNG CLOSE1
+          MOv AX,PADDLE_right_Y
+          ADD AX,PADDLE_HEIGHT
+          CMp [di],AX
+          jnl CLOSE1
+          CALL NEG_VecloityXofball
+          
+        CLOSE1:       
+ENDM
+checkleftpaddel MACRO  PADDLE_LEFT_Y,PADDLE_left_X,PADDLE_WIDTH,PADDLE_HEIGHT,BALLSize1
+        LOCAL CLOSE3
+          mov ax,[si]
+          ADD AX,BALLSize1
+          CMP  AX,PADDLE_left_X
+          JNG CLOSE3 ;;;;
+          mov ax,PADDLE_LEFT_X
+          add ax,PADDLE_WIDTH
+          cmp [si],ax
+          jnl CLOSE3 ;;;;;;;;
+          MOV AX,[di]
+          ADD AX,BALLSize1
+          CMP AX,PADDLE_LEFT_Y
+          JNG CLOSE3 
+          MOv AX,PADDLE_LEFT_Y
+          ADD AX,PADDLE_HEIGHT
+          CMp [di],AX
+         jnl CLOSE3;;;;
+          CALL NEG_VecloityXofball
+          
+          
+        CLOSE3: 
 ENDM
 staticWave macro y, x ;x, y relate to the waves position
    local whileWaveBeingDrawn
@@ -315,7 +357,7 @@ shield db 26,2,4
 			INT 10h    ;execute the configuration 
 		
 	     CALL CLEAR_SCREEN
-          blankScreen 15
+         ; blankScreen 15
          staticWave 100,160
          Check: mov ah,2ch
                      int 21h ; CH = hour CL = minute DH = second DL = 1/100 seconds
@@ -323,7 +365,8 @@ shield db 26,2,4
                      je Check
                      mov Time,dl
 		 			    CALL MOve_Paddel
-                        blankScreen 15
+                         CALL CLEAR_SCREEN
+                     ;   blankScreen 15
                         staticWave 100,160
                         CALL  drawShieldRight
                         CALL drawShieldLeft
@@ -336,16 +379,20 @@ shield db 26,2,4
                          try: 
                           mov VAR1,si ; store index  position of x
                           mov var2,di ; store index position of y
+                         checkleftpaddel   Pl_y,Pl_x,P_width,P_height,BALL_SIZE
+
                           mov Varbp,bp
                           CALL MOVE_BALL  ; here si,di changes so i need to know where was my postion so i can get it from var1,var2
-                    				  
+                    	 ; checkleftpaddel   Pl_y,Pl_x,P_width,P_height,BALL_SIZE
+                         ; checkrightpaddel   Pr_y,Pr_X,P_width,P_height,BALL_SIZE
+		  
                                   mov si,var1 ; index position of x
                                   mov di,var2 ; index postion of y
                                   add si,2h ; next index of x
                                   add di,2h ;next index of y
                               add bp,2  ; counter
                               cmp bp,0Ch  ;size of array              
-                              jl try
+                          jl try
 					
                           mov bp,0           ;draw
                           lea si,BALLX
@@ -468,6 +515,7 @@ MOve_Paddel PROC
     je MOVE_UP
     CMP AL, 73h ;'s'
     je MOVE_DOWN
+    jmp CHECK_RIGHT  
     
    MOVE_UP:
         MOV AX,PADDEL_VECLOITY
@@ -484,7 +532,7 @@ MOve_Paddel PROC
         
         mov ax,Window_height
         sub ax,WINDOW_BOUNDS
-        sub ax,PADDLE_HEIGHT
+        sub ax,P_Height
         cmp Pl_y,ax
         jg FIX_PADDEL2
         jmp CHECK_RIGHT
@@ -499,11 +547,11 @@ MOve_Paddel PROC
    FIX_PADDEL2: MOV Pl_y,AX
     
     CHECK_RIGHT:  
-    mov ah,01h
-    int 16h
-    jz close
-    mov ah,00h
-    int 16h
+    ;mov ah,01h
+    ;int 16h
+    ;jz close
+    ;mov ah,00h
+    ;int 16h
     CMP AL,70h ;'p'
     je MOVE_UP1
     CMP AL, 6ch ;'l'
@@ -523,7 +571,7 @@ MOve_Paddel PROC
         
         mov ax,Window_height
         sub ax,WINDOW_BOUNDS
-        sub ax,PADDLE_HEIGHT
+        sub ax,P_Height
         cmp Pr_y,ax
         jg FIX_PADDEL22
         RET
@@ -558,7 +606,12 @@ drawShieldLeft proc near
        cmp bx,offset rightShieldSize
     JNE whileRightShieldBeingDrawn
    ret
-   drawShieldRight endp
+drawShieldRight endp
+NEG_VecloityXofball PROC
+    mov bx,Varbp
+    NEG VecloictyX+bx  
+        RET
+NEG_VecloityXofball ENDP
 
 
 END MAIN

@@ -484,7 +484,7 @@ MOve_Paddel PROC
         
         mov ax,Window_height
         sub ax,WINDOW_BOUNDS
-        sub ax,PADDLE_HEIGHT
+        sub ax,P_Height
         cmp Pl_y,ax
         jg FIX_PADDEL2
         jmp CHECK_RIGHT
@@ -523,7 +523,7 @@ MOve_Paddel PROC
         
         mov ax,Window_height
         sub ax,WINDOW_BOUNDS
-        sub ax,PADDLE_HEIGHT
+        sub ax,P_Height
         cmp Pr_y,ax
         jg FIX_PADDEL22
         RET

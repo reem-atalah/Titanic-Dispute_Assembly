@@ -87,7 +87,7 @@ ENDM blankScreen
 	WINDOW_HEIGHT DW 0C8h  ;the height of the window (200 pixels)
 	WINDOW_BOUNDS DW 6     ;variable used to check collisions early
 	BALLX dw 0AH,45H,65h ,1ch,2Bh,70h
-    BALLY dw 0AH,01H,03h,0Eh,1eh,2Ch
+    BALLY dw 0AH,0FH,12h,0Eh,1eh,2Ch
 	TIME_AUX DB 0 ;variable used when checking if the time has changed
 	VecloictyX dw 01h,01h,01h,01h,01h,01H
     VecloictyY dw 02h,02h,02h,02h,02h,02h
@@ -193,6 +193,9 @@ waveSize dw 100
       
       ; endl
        DisplayString Msg2
+       MOV AH,00h ;set the configuration to video mode
+			MOV AL,13h ;choose the video mode
+			INT 10h    ;execute the configuration 
 		
 	     CALL CLEAR_SCREEN
           blankScreen 15
@@ -325,14 +328,12 @@ waveSize dw 100
 	DRAW_BALL ENDP
 	
 CLEAR_SCREEN PROC NEAR
-			MOV AH,00h ;set the configuration to video mode
-			MOV AL,13h ;choose the video mode
-			INT 10h    ;execute the configuration 
-		
-			MOV AH,0Bh ;set the configuration
-			MOV BH,00h ;to the background color
-			MOV BL,00h ;choose black as background color
-			INT 10h    ;execute the configuration
+			
+		 mov ax,0600h
+        mov bh, 03h  ;set the color for the background
+        mov cx,0
+        mov dx,184fh
+        int 10h
 			
 			RET
 CLEAR_SCREEN ENDP

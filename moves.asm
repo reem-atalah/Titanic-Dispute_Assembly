@@ -202,9 +202,9 @@ waveSize dw 100
                      CMP DL,Time
                      je Check
                      mov Time,dl
-		 			CALL CLEAR_SCREEN  
+		 			;CALL CLEAR_SCREEN  
                        blankScreen 15
-                      staticWave 100,160
+                        staticWave 100,160
                          mov bp,0h
                          Drawnewball: 
                              ;six balls    

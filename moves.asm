@@ -322,11 +322,12 @@ shield db 26,2,4
                      CMP DL,Time
                      je Check
                      mov Time,dl
-		 			  
+		 			    CALL MOve_Paddel
                         blankScreen 15
                         staticWave 100,160
                         CALL  drawShieldRight
                         CALL drawShieldLeft
+                        
                          mov bp,0h
                          Drawnewball: 
                              ;six balls    
@@ -470,21 +471,21 @@ MOve_Paddel PROC
     
    MOVE_UP:
         MOV AX,PADDEL_VECLOITY
-        sub PADDLE_LEFT_Y,AX
+        sub Pl_y,AX
         MOV AX,WINDOW_BOUNDS
-        CMP PADDLE_LEFT_Y,AX
+        CMP Pl_y,AX
         JL FIX_PADDEL
         jmp CHECK_RIGHT
           
       
    MOVE_DOWN:
         MOV AX,PADDEL_VECLOITY
-        add PADDLE_LEFT_Y,AX
+        add Pl_y,AX
         
         mov ax,Window_height
         sub ax,WINDOW_BOUNDS
         sub ax,PADDLE_HEIGHT
-        cmp PADDLE_LEFT_Y,ax
+        cmp Pl_y,ax
         jg FIX_PADDEL2
         jmp CHECK_RIGHT
           
@@ -492,10 +493,10 @@ MOve_Paddel PROC
    
     
    FIX_PADDEL: mov ax,WINDOW_BOUNDS
-               mov PADDLE_LEFT_Y,ax
+               mov Pl_y,ax
                 jmp CHECK_RIGHT
    
-   FIX_PADDEL2: MOV PADDLE_LEFT_Y,AX
+   FIX_PADDEL2: MOV Pl_y,AX
     
     CHECK_RIGHT:  
     mov ah,01h
@@ -510,27 +511,27 @@ MOve_Paddel PROC
     RET
    MOVE_UP1:
         MOV AX,PADDEL_VECLOITY
-        sub PADDLE_RIGHT_Y,AX
+        sub Pr_y,AX
         MOV AX,WINDOW_BOUNDS
-        CMP PADDLE_RIGHT_Y,AX
+        CMP Pr_y,AX
         JL FIX_PADDEL1
           RET
       
    MOVE_DOWN1:
         MOV AX,PADDEL_VECLOITY
-        add PADDLE_RIGHT_Y,AX
+        add Pr_y,AX
         
         mov ax,Window_height
         sub ax,WINDOW_BOUNDS
         sub ax,PADDLE_HEIGHT
-        cmp PADDLE_RIGHT_Y,ax
+        cmp Pr_y,ax
         jg FIX_PADDEL22
         RET
     FIX_PADDEL1: mov ax,WINDOW_BOUNDS
-               mov PADDLE_right_Y,ax
+               mov Pr_y,ax
                 RET
    
-    FIX_PADDEL22: MOV PADDLE_right_Y,AX
+    FIX_PADDEL22: MOV Pr_y,AX
 
     close:     
        RET

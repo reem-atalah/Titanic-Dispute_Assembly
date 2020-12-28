@@ -380,12 +380,12 @@ shield db 26,2,4
                           mov VAR1,si ; store index  position of x
                           mov var2,di ; store index position of y
                           mov Varbp,bp
-                          CALL checkright
+                         CALL checkright
                           CALL checkleft
                         
                           CALL MOVE_BALL 
-                        ; CALL checkright
-                          ;CALL checkleft
+                         CALL checkright
+                          CALL checkleft
                            ; here si,di changes so i need to know where was my postion so i can get it from var1,var2
                         ;   checkrightpaddel   Pr_y,Pr_X,P_width,P_height,BALL_SIZE
 		  
@@ -404,6 +404,8 @@ shield db 26,2,4
     
                             mov VAR1,si
                             mov var2,di
+                            CALL checkright
+                          CALL checkleft
                         	CALL DRAWBALL
                             mov si,var1
                             mov di,var2

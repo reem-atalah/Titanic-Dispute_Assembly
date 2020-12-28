@@ -247,7 +247,7 @@ endm drawShield
 
 
 
-shieldControl macro P_y, upKey, downKey ;Takes the dimension that we would like to control, and the two keys using for controling that dimension
+shieldControlFirst macro P_y, upKey, downKey ;Takes the dimension that we would like to control, and the two keys using for controling that dimension
     local Read, movesUp, movesDown, resetPositionHigh, resetPositionLow, None
     ;So for vertical motion of the left shield pass Pl_y and vice versa.
     ;Check if any key is pressed, if yes then check if it's w, W or s, S for the former move up and for the latter move down, check collisions with upper and lower boundaries for each.
@@ -291,7 +291,54 @@ shieldControl macro P_y, upKey, downKey ;Takes the dimension that we would like 
 
     None:
     
-endm shieldControl 
+endm shieldControlFirst 
+
+
+shieldControlSecond macro P_y, upKey, downKey ;Takes the dimension that we would like to control, and the two keys using for controling that dimension
+    local Reads, movesUps, movesDowns, resetPositionHighs, resetPositionLows, Nones
+    ;So for vertical motion of the left shield pass Pl_y and vice versa.
+    ;Check if any key is pressed, if yes then check if it's w, W or s, S for the former move up and for the latter move down, check collisions with upper and lower boundaries for each.
+    ;getKeyboardStatus
+    JZ Nones ;No key was pressed, see if any neccessary action is needed.
+        ;readKey ;else key was pressed
+        cmp Ah,upKey ;Left
+        JE movesUps
+        cmp Ah,downKey ;Right
+        JE movesDowns
+        JMP Nones ;Do nothing if any other key was pressed.
+
+
+    movesUps:
+        mov ax,P_Velocity
+        sub P_y, ax
+        ;Check collisions with y=0
+        cmp P_y,0
+        Jl resetPositionHighs
+        JMP Nones
+
+    movesDowns:
+        mov ax,P_velocity
+        add P_y, ax
+        ;Check collisions with y=windowHeight-shieldHight
+        cmp P_y,150
+        JG resetPositionLows
+        JMP Nones
+
+    resetPositionHighs:
+    ;Attempt to surpass y=0: reset position to y=0
+        mov ax,0
+        mov P_y,ax
+        JMP Nones
+
+    resetPositionLows:
+    ;Attempt to surpass y=200 (the bottom pixel): reset position to y=200 
+        mov ax,150 ;WindowHeight-ShieldHeight (Since we're dealing with the top left pixel of the shield)
+        mov P_y,ax
+        JMP Nones
+
+    Nones:
+    
+endm shieldControlSecond
 
 
 resetPosition macro So_x,So_y ;Positions to which we would like to reset the ball
@@ -347,7 +394,7 @@ endm resetPosition
 .STACK 64   
 .DATA
     ;Data variables relating to the ball
-    
+
     S_x dw 100 ;x position of the ball
     S_y dw 30 ;y position of the ball
     V_x dw 3H ;Horizontal Velocity
@@ -896,12 +943,12 @@ shipRightSize dw 171
     blankScreen 104,5,34 ;Color, from, to (on the x-axis)
     staticWave 100,160,A
     staticWave 50,50,B
-     staticWave 200,320,B
+    staticWave 200,320,B
     staticWave 150,180,B
 
     call drawBall
-    shieldControl Pr_y,4Dh,4Bh ;control Pr_y up and down with right and left arrows.
-    shieldControl Pl_y,0fh,10h ;control Pl_y up and down with Tab and Q.
+    shieldControlFirst Pr_y,4Dh,4Bh ;control Pr_y up and down with right and left arrows.
+    shieldControlSecond Pl_y,0fh,10h ;control Pl_y up and down with Tab and Q.
     call drawShieldLeft 
     call drawShieldRight  
     jmp whileTime

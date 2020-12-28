@@ -100,53 +100,53 @@ ENDM
       ; endl
        DisplayString Msg2
 		
-	 ;CALL CLEAR_SCREEN
+	     CALL CLEAR_SCREEN
          
-        ;    Check: mov ah,2ch
-        ;             int 21h ; CH = hour CL = minute DH = second DL = 1/100 seconds
-        ;             CMP DL,Time
-        ;             je Check
-        ;             mov Time,dl
-		; 			CALL CLEAR_SCREEN  
+         Check: mov ah,2ch
+                     int 21h ; CH = hour CL = minute DH = second DL = 1/100 seconds
+                     CMP DL,Time
+                     je Check
+                     mov Time,dl
+		 			CALL CLEAR_SCREEN  
                      
-        ;                 mov bp,0h
-        ;                 Drawnewball: 
-        ;                     ;six balls    
-        ;                     lea si,BALLX
-        ;                     lea di,BALLY
-        ;                 try: 
-        ;                  mov VAR1,si ; store index  position of x
-        ;                  mov var2,di ; store index position of y
-        ;                  mov Varbp,bp
-        ;                  CALL MOVE_BALL  ; here si,di changes so i need to know where was my postion so i can get it from var1,var2
+                         mov bp,0h
+                         Drawnewball: 
+                             ;six balls    
+                             lea si,BALLX
+                             lea di,BALLY
+                         try: 
+                          mov VAR1,si ; store index  position of x
+                          mov var2,di ; store index position of y
+                          mov Varbp,bp
+                          CALL MOVE_BALL  ; here si,di changes so i need to know where was my postion so i can get it from var1,var2
                     				  
-        ;                          mov si,var1 ; index position of x
-        ;                          mov di,var2 ; index postion of y
-        ;                          add si,2h ; next index of x
-        ;                          add di,2h ;next index of y
-        ;                      add bp,2  ; counter
-        ;                      cmp bp,0Ch  ;size of array              
-        ;                      jl try
+                                  mov si,var1 ; index position of x
+                                  mov di,var2 ; index postion of y
+                                  add si,2h ; next index of x
+                                  add di,2h ;next index of y
+                              add bp,2  ; counter
+                              cmp bp,0Ch  ;size of array              
+                              jl try
 					
-        ;                  mov bp,0           ;draw
-        ;                  lea si,BALLX
-        ;                  lea di,BALLY
-        ;                 try1: 
+                          mov bp,0           ;draw
+                          lea si,BALLX
+                        lea di,BALLY
+                         try1: 
     
-        ;                     mov VAR1,si
-        ;                     mov var2,di
-        ;                 	CALL DRAW_BALL
-        ;                     mov si,var1
-        ;                     mov di,var2
-        ;                     add si,2h
-        ;                     add di,2h
-        ;                     add bp,2
-        ;                     cmp bp,0Ch          
-        ;                     jL try1
-        ;                     mov bp,0h
-        ;                     lea si,BALLX
-        ;                     lea di,BALLY
-        ;                     Jmp check
+                            mov VAR1,si
+                            mov var2,di
+                        	CALL DRAW_BALL
+                            mov si,var1
+                            mov di,var2
+                            add si,2h
+                            add di,2h
+                            add bp,2
+                            cmp bp,0Ch          
+                            jL try1
+                            mov bp,0h
+                            lea si,BALLX
+                            lea di,BALLY
+                            Jmp check
 		
 	MAIN ENDP
 	

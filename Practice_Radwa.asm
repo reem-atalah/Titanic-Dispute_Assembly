@@ -54,8 +54,7 @@ MOVEBALLS MACRO BALLX1,BALLVecloityX,BALLVecloityY,BALLY1,Window_height,Window_W
     
 ENDM
 checkrightpaddel MACRO BALLX1,BALLY1,PADDLE_RIGHT_X,PADDLE_WIDTH,PADDLE_HEIGHT,BALLSize1
-
-        ;  LOCAL CLOSE1
+        LOCAL CLOSE1
           mov ax,BALLX1 
           ADD AX,BALLSize1
           CMP  AX,PADDLE_RIGHT_X
@@ -74,10 +73,7 @@ checkrightpaddel MACRO BALLX1,BALLY1,PADDLE_RIGHT_X,PADDLE_WIDTH,PADDLE_HEIGHT,B
           jnl CLOSE1
           CALL NEG_VecloityX
           
-        CLOSE1:  
-          
-
-    
+        CLOSE1:       
 ENDM
 checkleftpaddel MACRO  BALLX1,BALLY1,PADDLE_left_X,PADDLE_WIDTH,PADDLE_HEIGHT,BALLSize1
         LOCAL CLOSE3
@@ -100,11 +96,7 @@ checkleftpaddel MACRO  BALLX1,BALLY1,PADDLE_left_X,PADDLE_WIDTH,PADDLE_HEIGHT,BA
           CALL NEG_VecloityX
           
           
-        CLOSE3:  
-          
-    
-
-    
+        CLOSE3: 
 ENDM
 gettime MACRO Time1
  Check: mov ah,0ch

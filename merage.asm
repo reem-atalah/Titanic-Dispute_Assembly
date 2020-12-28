@@ -379,11 +379,12 @@ shield db 26,2,4
                          try: 
                           mov VAR1,si ; store index  position of x
                           mov var2,di ; store index position of y
-                          mov Varbp,bp
-                        checkleftpaddel   Pl_y,Pl_x,P_width,P_height,BALL_SIZE
+                         checkleftpaddel   Pl_y,Pl_x,P_width,P_height,BALL_SIZE
 
+                          mov Varbp,bp
                           CALL MOVE_BALL  ; here si,di changes so i need to know where was my postion so i can get it from var1,var2
-                        ;   checkrightpaddel   Pr_y,Pr_X,P_width,P_height,BALL_SIZE
+                    	 ; checkleftpaddel   Pl_y,Pl_x,P_width,P_height,BALL_SIZE
+                         ; checkrightpaddel   Pr_y,Pr_X,P_width,P_height,BALL_SIZE
 		  
                                   mov si,var1 ; index position of x
                                   mov di,var2 ; index postion of y

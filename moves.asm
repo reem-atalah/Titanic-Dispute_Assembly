@@ -315,7 +315,7 @@ shield db 26,2,4
 			INT 10h    ;execute the configuration 
 		
 	     CALL CLEAR_SCREEN
-          blankScreen 15
+         ; blankScreen 15
          staticWave 100,160
          Check: mov ah,2ch
                      int 21h ; CH = hour CL = minute DH = second DL = 1/100 seconds
@@ -323,7 +323,8 @@ shield db 26,2,4
                      je Check
                      mov Time,dl
 		 			    CALL MOve_Paddel
-                        blankScreen 15
+                         CALL CLEAR_SCREEN
+                     ;   blankScreen 15
                         staticWave 100,160
                         CALL  drawShieldRight
                         CALL drawShieldLeft
@@ -468,6 +469,7 @@ MOve_Paddel PROC
     je MOVE_UP
     CMP AL, 73h ;'s'
     je MOVE_DOWN
+    jmp CHECK_RIGHT  
     
    MOVE_UP:
         MOV AX,PADDEL_VECLOITY
@@ -499,11 +501,11 @@ MOve_Paddel PROC
    FIX_PADDEL2: MOV Pl_y,AX
     
     CHECK_RIGHT:  
-    mov ah,01h
-    int 16h
-    jz close
-    mov ah,00h
-    int 16h
+    ;mov ah,01h
+    ;int 16h
+    ;jz close
+    ;mov ah,00h
+    ;int 16h
     CMP AL,70h ;'p'
     je MOVE_UP1
     CMP AL, 6ch ;'l'

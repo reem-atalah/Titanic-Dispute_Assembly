@@ -7,9 +7,39 @@ ENDM DisplayString
 
 DisplayCharacter macro Char
     mov dl, Char
+    add dl,30h
     mov ah, 2h
     int 21h
 ENDM DisplayCharacter
+
+DisplayNumber MACRO number
+    pusha
+    mov al, number
+    mov ah,0
+    mov bl,100
+    div bl
+    mov dl,al
+    push ax
+    add dl,30h
+    mov ah,02h
+    int 21h
+    pop ax
+    mov bl,10
+    mov al,ah
+    mov ah,0
+    div bl  
+    mov dl,al
+    push ax
+    add dl,30h
+    mov ah,02h
+    int 21h
+    pop ax
+    mov dl,ah
+    add dl,30h
+    mov ah,02h
+    int 21h
+    popa
+ENDM DisplayNumber
 
 endl macro ;prints a new line
     mov ah, 02h
@@ -48,11 +78,13 @@ DisplayAx macro
     popa
 ENDM DisplayAx
 
-setTextCursor macro Coordinates
+setTextCursor macro dlValue,dhValue
     pusha
-    mov ah,02h
-    mov DX, Coordinates
-    int 10h
+    MOV  DL, dlValue    ;SCREEN COLUMN.
+    MOV  DH, dhValue    ;SCREEN ROW.
+    MOV  AH, 2     ;SERVICE TO SET CURSOR POSITION.
+    MOV  BH, 0     ;PAGE NUMBER.
+    INT  10H       ;BIOS SCREEN SERVICES.
     popa
 ENDM setTextCursor
 
@@ -152,6 +184,30 @@ blankScreen macro color, from, to
 
 ENDM blankScreen 
 
+; blankTextScreen macro 
+; 	mov ah,06 ;Scroll (Zero lines anyway)
+;     mov al,00h ;to blank the screen
+; 	mov bh,104 ;color to blank the screen with
+;     mov ch,1
+;     mov cl,5
+;     mov dh,2
+;     mov dl,34
+;  ;to the end of the screen
+; 	int 10h
+
+; ENDM blankTextScreen 
+
+
+blankTextScreen macro 
+	mov ah,06 ;Scroll (Zero lines anyway)
+    mov al,00h ;to blank the screen
+	mov bh,104 ;color to blank the screen with
+    mov cx,0
+    mov dx,184fh
+ ;to the end of the screen
+	int 10h
+
+ENDM blankTextScreen 
 
 
 checKDifference macro A,B,C ;checks if A-B=C and yields 0 if that's true
@@ -731,7 +787,7 @@ endm Waves
         db 0,168,12,1,168,12,2,168,12,3,168,12,4,168,164,5,168,164,6,168,164,7,168,164,8,168,164,9,168,12,10,168,140,11,168,65,12,168,139,14,168,16
         db 0,170,16,1,170,16,2,170,16,3,170,16,4,170,16,5,170,16,6,170,16,7,170,16,8,170,16,9,170,16,10,170,16,11,170,16,12,170,16
         shipLeftSize dw 171 
- 
+        shipLeftWidth dw 34
  
  
     shipRight db 21,0,16,22,0,16,23,0,16,24,0,16,25,0,16,26,0,16,27,0,16,28,0,16,29,0,16,30,0,16,31,0,16,32,0,16,33,0,16
@@ -902,7 +958,10 @@ endm Waves
         db 27,167,16,28,167,16,29,167,16,30,167,16,31,167,16,32,167,16,33,167,16
 
         shipRightSize dw 171 
- 
+        shipRightWidth dw 34
+
+    scoreLeft DB 100
+    scoreRight DB 100
 
 .Code
     MAIN PROC FAR 
@@ -913,25 +972,33 @@ endm Waves
     blankScreen 104,0,4fh
                                       ;Updating the objects' position with time is how we get to move them. Get system time, check if time has passed, erase screen and redraw.
                                       ;Check if the current 100ths of a second is different than the previous one.
+
     whileTime:                        ;while centisecond hasn't passed yet
 
         staticShipLeft 10,320
-        staticShipRight 10,286
+        staticShipRight 10,286 
         checkTimePassed Centiseconds
+        
 
     JE whileTime       
                                                 ;if a centisecond passes (won't be triggered for any less time)
         mov Centiseconds,dl                     ;centisecond(s) has passed update the time variable with the new time.
         ;Motion V_x, V_y                        ;Call the velocity macro, note that it deals with collisions inside.
         blankScreen 104,5,34                    ;Color, from, to (on the x-axis)
-        Waves                                   ;repeated calls to staric waves
+        Waves                                   ;repeated calls to static waves
         dynamicBalls                            ;Responsible for drawing and maintaining ball movement
         shieldControlFirst Pr_y,4Dh,4Bh         ;control Pr_y up and down with right and left arrows.
         shieldControlSecond Pl_y,0fh,10h        ;control Pl_y up and down with Tab and Q.
-        call drawShieldLeft 
-        call drawShieldRight
+        call drawShieldLeft                     ;Draw left shield
+        call drawShieldRight                    ;Draw right shield
+        setTextCursor 2,2                       ;Set Cursor for position of leftscore
+        DisplayNumber scoreLeft                 ;draw leftscore
+        setTextCursor 35,2                       ;Set Cursor for position of rightscore
+        DisplayNumber scoreRight                 ;draw rightscore
 
     jmp whileTime
+    
+           
     return
     MAIN ENDP 
     
@@ -977,6 +1044,74 @@ endm Waves
    drawShieldRight endp
 
  ;Procedures relating to motion and collisions
+ 
+  checkRightShipCollisions proc near
+        ;Check collisions with the left ship and do necessary action based on that
+        ;(M.x+M.width>=N.x && M.x<=N.x+N.width && M.y+M.height>=N.y && M.y<=N.y+N.height) indicates a collision as we've demonstrated below (if any isn't satisified we escape)
+        ; M is the left shield and N is the ball     
+        mov bx,currentBallIndex                            
+        mov ax,[bx+S_x]
+        add ax,ballSize
+        cmp ax,286
+        JNG goOut ;first condition not satisified, no need to check anymore.
+
+        ; mov ax,286
+        ; add ax,shipRightWidth
+        ; cmp ax,[bx+S_x]
+        ; JNG goOut ;second condition
+
+        ; mov ax,[bx+S_y]
+        ; add ax,ballSize
+        ; cmp ax,shipRightSize
+        ; JNG goOut
+
+        ; mov ax,286
+        ; add ax,shipRightSize
+        ; cmp ax,[bx+S_y]
+        ; JNG goOut
+
+        ;Reaching this point indicates that the conditions are satisified.
+        cmp scoreRight,0
+        JNG goOut
+        dec scoreRight 
+    
+    goOut: ;Do nothing if none is satisfied
+    ret
+    checkRightShipCollisions endp
+
+  checkLeftShipCollisions proc near
+        ;Check collisions with the left ship and do necessary action based on that
+        ;(M.x+M.width>=N.x && M.x<=N.x+N.width && M.y+M.height>=N.y && M.y<=N.y+N.height) indicates a collision as we've demonstrated below (if any isn't satisified we escape)
+        ; M is the left shield and N is the ball     
+        mov bx,currentBallIndex                            
+        mov ax,0
+        add ax,shipLeftWidth
+        cmp ax,[bx+S_x]
+        JNG goOutNow ;first condition not satisified, no need to check anymore.
+
+        mov ax,[bx+S_x]
+        add ax,ballSize
+        cmp ax,0
+        JNG goOutNow ;second condition
+
+        mov ax,0
+        add ax,shipLeftSize
+        cmp ax,[bx+S_y]
+        JNG goOutNow
+
+        mov ax,[bx+S_y]
+        add ax,ballSize
+        cmp ax,0
+        JNG goOutNow
+        ;Reaching this point indicates that the conditions are satisified.
+        cmp scoreLeft,0
+        JNG goOutNow
+        dec scoreLeft 
+    
+    goOutNow: ;Do nothing if none is satisfied
+    ret
+    checkLeftShipCollisions endp
+
     checkLeftShieldCollisions proc near
         ;Check collisions with the left shield and do necessary action based on that
         ;(M.x+M.width>=N.x && M.x<=N.x+N.width && M.y+M.height>=N.y && M.y<=N.y+N.height) indicates a collision as we've demonstrated below (if any isn't satisified we escape)
@@ -1089,6 +1224,8 @@ endm Waves
         goodBye:
 call checkrightShieldCollisions
 call checkleftShieldCollisions
+call checkleftShipCollisions
+call checkRightShipCollisions
 ret
 	moveBall ENDP
 

@@ -957,9 +957,10 @@ endm Waves
     
 ;description
  GenerateBallsWithtime PROC near
+ ;; try to compare with big time to generate slowly
      MOV BL,0aH
      mov al,Centiseconds
-     mul bl
+    ; mul bl
      cmp aX,0aaaah
      jl break
      cmp aX,0FFFFh

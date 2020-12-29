@@ -459,12 +459,12 @@ endm Waves
 	screenWidth DW 320      ;the width of the window (320 pixels)
 	screenHeight DW 200     ;the height of the window (200 pixels)
 	screenMargin DW 6       ;variable used to check collisions early
-    S_x dw 100,150,160      ;x position of the ball
-    S_y dw 60,40,30         ;y position of the ball
-    V_x dw 2H,6H,5h         ;Horizontal Velocity
-    V_y dw 1H,5H,7h         ;Vertical Velocity
+    S_x dw 100,150,160,150,160,170      ;x position of the ball
+    S_y dw 60,40,30,40,30,20         ;y position of the ball
+    V_x dw 2H,6H,5h,5h,6h,7h         ;Horizontal Velocity
+    V_y dw 1H,5H,7h ,1h,3h,2h        ;Vertical Velocity
     currentBallIndex dw ? 
-    ballCount dw 6h
+    ballCount dw 4h
     colorBall db 0eh
     Centiseconds db 0;To check if a centisecond has passed.
     ;Data variables relating to the Shield (Pl (Left), Pr(Right)):
@@ -1101,14 +1101,16 @@ MAIN ENDP
      mov ah,2ch
      int 21h ;gets the current time
      cmp MINUTES,cl
-     jl break
-     mov cl,0FFH
-     cmp MINUTES,CL
-     Jg  changeballcount
-     mov ax,6h
+     je break
+     MOV MINUTES,CL
+     
+     mov ax,8h
+     cmp ballCount,ax
+     jl changeballcount
+     mov ax,0Ch
      mov ballCount,ax
      jmp break
-     changeballcount: mov ax,4h
+     changeballcount: mov ax,8h
               mov ballCount,ax
       break:
       

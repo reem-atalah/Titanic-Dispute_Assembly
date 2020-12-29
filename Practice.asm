@@ -943,7 +943,8 @@ endm Waves
         mov Centiseconds,dl                     ;centisecond(s) has passed update the time variable with the new time.
         ;Motion V_x, V_y                        ;Call the velocity macro, note that it deals with collisions inside.
         blankScreen 104,5,34                    ;Color, from, to (on the x-axis)
-        Waves                                   ;repeated calls to staric waves
+        Waves  
+        call GenerateBallsWithtime                                 ;repeated calls to staric waves
         dynamicBalls                            ;Responsible for drawing and maintaining ball movement
         shieldControlFirst Pr_y,4Dh,4Bh         ;control Pr_y up and down with right and left arrows.
         shieldControlSecond Pl_y,0fh,10h        ;control Pl_y up and down with Tab and Q.
@@ -954,6 +955,25 @@ endm Waves
     return
     MAIN ENDP 
     
+;description
+ GenerateBallsWithtime PROC near
+     MOV BL,01H
+     mov al,Centiseconds
+     mul bl
+     cmp aX,0aaaah
+     jl break
+     cmp aX,0FFFFh
+     Jl change1
+     mov ax,6h
+     mov ballCount,ax
+     jmp break
+     change1: mov ax,4h
+              mov ballCount,ax
+      break:
+
+
+     ret
+ GenerateBallsWithtime ENDP
 
 ;Procedures relating to graphics:
 

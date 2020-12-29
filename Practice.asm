@@ -405,6 +405,9 @@ endm Waves
     Pr_x dw 265
     Pr_y dw 50
     P_Velocity dw 20
+    Msg db 11 dup(10,13),09h,"Please Enter Your Name:",2 dup(10,13),09h,'$'
+    UserName db 30,?, 30 dup('$')
+    Msg2 db 2 dup(10,13),09h,"PLease Enter Any Key To continue",'$'
 ;Graphics:
     ball db 6,0,17,7,0,17,8,0,17,9,0,17,10,0,17,11,0,17,12,0,17,13,0,17
         db 4,1,17,5,1,17,6,1,17,7,1,17,8,1,17,9,1,17,10,1,17,11,1,17,12,1,17,13,1,17,14,1,17,15,1,17
@@ -913,6 +916,22 @@ endm Waves
     blankScreen 104,0,4fh
                                       ;Updating the objects' position with time is how we get to move them. Get system time, check if time has passed, erase screen and redraw.
                                       ;Check if the current 100ths of a second is different than the previous one.
+    
+    mov ah,9
+    mov dx,offset Msg
+    int 21h
+    blankScreen 104,0,7
+    mov ah,0Ah
+    mov dx,offset UserName
+    int 21h
+    mov ah,9
+    mov dx,offset Msg2
+    int 21h
+    blankScreen 104,0,7
+    mov ah,0
+    int 16h
+
+   blankScreen 104,0,4fh
     whileTime:                        ;while centisecond hasn't passed yet
 
         staticShipLeft 10,320

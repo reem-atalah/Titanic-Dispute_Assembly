@@ -152,6 +152,19 @@ blankScreen macro color, from, to
 
 ENDM blankScreen 
 
+blankScreen2 macro color, from, to
+	mov ah,06     ;Scroll (Zero lines anyway)
+    mov al,00h    ;to blank the screen
+	mov bh,color  ;color to blank the screen with
+    mov ch,from
+    mov cl,00h
+    mov dh,to
+    mov dl,4fh
+ ;to the end of the screen
+	int 10h
+
+ENDM blankScreen 
+
 
 
 checKDifference macro A,B,C ;checks if A-B=C and yields 0 if that's true
@@ -395,7 +408,7 @@ endm Waves
     V_x dw 2H,6H,5h         ;Horizontal Velocity
     V_y dw 1H,5H,7h         ;Vertical Velocity
     currentBallIndex dw ? 
-    ballCount dw 2h
+    ballCount dw 6h
     colorBall db 0eh
     Centiseconds db 0;To check if a centisecond has passed.
     ;Data variables relating to the Shield (Pl (Left), Pr(Right)):
@@ -407,7 +420,11 @@ endm Waves
     P_Velocity dw 20
     Msg db 11 dup(10,13),09h,"Please Enter Your Name:",2 dup(10,13),09h,'$'
     UserName db 30,?, 30 dup('$')
+    playerName2 db "Radwa",'$'
+    sendchat db 11 dup(10,13),"you send a chat invitation to ",'$'
+    sendgame db 11 dup(10,13),"you send a game invitation to ",'$'
     Msg2 db 2 dup(10,13),09h,"PLease Enter Any Key To continue",'$'
+    Msg3 db 7 dup(10,13),09h,"*To start chatting press F1",2 dup(10,13),09h,"*To start game press F2",2 dup(10,13),09h,"*To end the program press ESC",'$'
 ;Graphics:
     ball db 6,0,17,7,0,17,8,0,17,9,0,17,10,0,17,11,0,17,12,0,17,13,0,17
         db 4,1,17,5,1,17,6,1,17,7,1,17,8,1,17,9,1,17,10,1,17,11,1,17,12,1,17,13,1,17,14,1,17,15,1,17
@@ -922,14 +939,65 @@ endm Waves
     int 21h
     blankScreen 104,0,7
     mov ah,0Ah
-    mov dx,offset UserName
+    mov dx,offset UserName  ;get the player name
     int 21h
     mov ah,9
-    mov dx,offset Msg2
+    mov dx,offset Msg2      ;show message of continue 
     int 21h
     blankScreen 104,0,7
+    mov ah,0             ;get any key to continue
+    int 16h
+
+    graphicsMode 13h 
+    blankScreen 104,0,4fh
+    mov ah,9
+    mov dx,offset Msg3   
+    int 21h
+    blankScreen 104,0,7
+    blankScreen2 07,15h,18h ;drow notification bar
+
+    Getchar:               ;get the player destion
     mov ah,0
     int 16h
+    cmp ah,3Bh             ;scancode for F1
+    JZ  Chat
+    cmp ah,3Ch             ;scanecode for F2
+    JZ TheGame
+    cmp al,1Bh             ;asscii code for ESC
+    Jz ExitGame
+    jmp Getchar
+    
+    TheGame:               ;start the game
+    mov ah,9
+    mov dx,offset sendgame
+    int 21h
+    mov dx,offset playerName2
+    int 21h
+    mov ah,0
+    int 16h
+    Call GameProc
+    return
+
+    CHAT:
+    mov ah,9
+    mov dx,offset sendchat  ;show the message of the chat
+    int 21h
+    mov ah,9
+    mov dx,offset playerName2
+    int 21h
+    mov ah,0
+    int 16h
+    ExitGame:
+mov ah,0        ;to text mode
+mov al,03h
+int 10h    
+mov AH,4CH  ;end programm
+INT 21H
+MAIN ENDP 
+    
+
+;Procedures relating to graphics:
+   GameProc proc near
 
    blankScreen 104,0,4fh
     whileTime:                        ;while centisecond hasn't passed yet
@@ -943,8 +1011,7 @@ endm Waves
         mov Centiseconds,dl                     ;centisecond(s) has passed update the time variable with the new time.
         ;Motion V_x, V_y                        ;Call the velocity macro, note that it deals with collisions inside.
         blankScreen 104,5,34                    ;Color, from, to (on the x-axis)
-        Waves  
-        call GenerateBallsWithtime                                 ;repeated calls to staric waves
+        Waves                                   ;repeated calls to staric waves
         dynamicBalls                            ;Responsible for drawing and maintaining ball movement
         shieldControlFirst Pr_y,4Dh,4Bh         ;control Pr_y up and down with right and left arrows.
         shieldControlSecond Pl_y,0fh,10h        ;control Pl_y up and down with Tab and Q.
@@ -952,32 +1019,8 @@ endm Waves
         call drawShieldRight
 
     jmp whileTime
-    return
-    MAIN ENDP 
-    
-;description
- GenerateBallsWithtime PROC near
- ;; try to compare with big time to generate slowly
-     MOV BL,0aH
-     mov al,Centiseconds
-    ; mul bl
-     cmp aX,0aaaah
-     jl break
-     cmp aX,0FFFFh
-     Jl change1
-     mov ax,6h
-     mov ballCount,ax
-     jmp break
-     change1: mov ax,4h
-              mov ballCount,ax
-      break:
-    
 
-
-     ret
- GenerateBallsWithtime ENDP
-
-;Procedures relating to graphics:
+   GameProc endp
 
    drawBall proc near
     mov ah,0ch

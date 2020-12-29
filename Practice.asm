@@ -395,7 +395,7 @@ endm Waves
     V_x dw 2H,6H,5h         ;Horizontal Velocity
     V_y dw 1H,5H,7h         ;Vertical Velocity
     currentBallIndex dw ? 
-    ballCount dw 6h
+    ballCount dw 2h
     colorBall db 0eh
     Centiseconds db 0;To check if a centisecond has passed.
     ;Data variables relating to the Shield (Pl (Left), Pr(Right)):
@@ -957,7 +957,7 @@ endm Waves
     
 ;description
  GenerateBallsWithtime PROC near
-     MOV BL,01H
+     MOV BL,0aH
      mov al,Centiseconds
      mul bl
      cmp aX,0aaaah
@@ -970,6 +970,7 @@ endm Waves
      change1: mov ax,4h
               mov ballCount,ax
       break:
+    
 
 
      ret

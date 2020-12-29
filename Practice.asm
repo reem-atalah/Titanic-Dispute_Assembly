@@ -451,7 +451,7 @@ endm Waves
     V_x dw 2H,6H,5h         ;Horizontal Velocity
     V_y dw 1H,5H,7h         ;Vertical Velocity
     currentBallIndex dw ? 
-    ballCount dw 6h
+    ballCount dw 2h
     colorBall db 0eh
     Centiseconds db 0;To check if a centisecond has passed.
     ;Data variables relating to the Shield (Pl (Left), Pr(Right)):
@@ -461,6 +461,9 @@ endm Waves
     Pr_x dw 265
     Pr_y dw 50
     P_Velocity dw 20
+    Msg db 11 dup(10,13),09h,"Please Enter Your Name:",2 dup(10,13),09h,'$'
+    UserName db 30,?, 30 dup('$')
+    Msg2 db 2 dup(10,13),09h,"PLease Enter Any Key To continue",'$'
 ;Graphics:
     ball db 6,0,17,7,0,17,8,0,17,9,0,17,10,0,17,11,0,17,12,0,17,13,0,17
         db 4,1,17,5,1,17,6,1,17,7,1,17,8,1,17,9,1,17,10,1,17,11,1,17,12,1,17,13,1,17,14,1,17,15,1,17
@@ -973,6 +976,21 @@ endm Waves
                                       ;Updating the objects' position with time is how we get to move them. Get system time, check if time has passed, erase screen and redraw.
                                       ;Check if the current 100ths of a second is different than the previous one.
 
+    mov ah,9
+    mov dx,offset Msg
+    int 21h
+    blankScreen 104,0,7
+    mov ah,0Ah
+    mov dx,offset UserName
+    int 21h
+    mov ah,9
+    mov dx,offset Msg2
+    int 21h
+    blankScreen 104,0,7
+    mov ah,0
+    int 16h
+
+   blankScreen 104,0,4fh
     whileTime:                        ;while centisecond hasn't passed yet
 
         staticShipLeft 10,320
@@ -986,6 +1004,8 @@ endm Waves
         ;Motion V_x, V_y                        ;Call the velocity macro, note that it deals with collisions inside.
         blankScreen 104,5,34                    ;Color, from, to (on the x-axis)
         Waves                                   ;repeated calls to static waves
+        Waves  
+        call GenerateBallsWithtime                                 ;repeated calls to staric waves
         dynamicBalls                            ;Responsible for drawing and maintaining ball movement
         shieldControlFirst Pr_y,4Dh,4Bh         ;control Pr_y up and down with right and left arrows.
         shieldControlSecond Pl_y,0fh,10h        ;control Pl_y up and down with Tab and Q.
@@ -1002,6 +1022,27 @@ endm Waves
     return
     MAIN ENDP 
     
+;description
+ GenerateBallsWithtime PROC near
+ ;; try to compare with big time to generate slowly
+     MOV BL,0aH
+     mov al,Centiseconds
+    ; mul bl
+     cmp aX,0aaaah
+     jl break
+     cmp aX,0FFFFh
+     Jl change1
+     mov ax,6h
+     mov ballCount,ax
+     jmp break
+     change1: mov ax,4h
+              mov ballCount,ax
+      break:
+    
+
+
+     ret
+ GenerateBallsWithtime ENDP
 
 ;Procedures relating to graphics:
 

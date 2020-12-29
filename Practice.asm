@@ -989,7 +989,10 @@ endm Waves
     MAIN PROC FAR 
     MOV AX,@Data
     MOV DS,AX
-
+   initialtime:
+       mov ah,2ch
+      int 21h ;gets the current time
+     Mov MINUTES,cl
     graphicsMode 13h                 ;https://stanislavs.org/helppc/int_10.html click on set video modes for all modes
     blankScreen 104,0,4fh
                                       ;Updating the objects' position with time is how we get to move them. Get system time, check if time has passed, erase screen and redraw.
@@ -1098,16 +1101,17 @@ MAIN ENDP
      mov ah,2ch
      int 21h ;gets the current time
      cmp MINUTES,cl
-     
      jl break
-     cmp cl,0FFh
-     Jg change1
+     mov cl,0FFH
+     cmp MINUTES,CL
+     Jg  changeballcount
      mov ax,6h
      mov ballCount,ax
      jmp break
      changeballcount: mov ax,4h
               mov ballCount,ax
       break:
+      
       RET
     
   GenerateBallsWithtime ENDP 

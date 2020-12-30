@@ -458,7 +458,7 @@ endm Waves
     ;Data variables relating to the ball
 	screenWidth DW 320      ;the width of the window (320 pixels)
 	screenHeight DW 200     ;the height of the window (200 pixels)
-	screenMargin DW 6       ;variable used to check collisions early
+	screenMargin DW 45       ;variable used to check collisions early
     S_x dw 100,150,160,150,160,170      ;x position of the ball
     S_y dw 60,40,30,40,30,20         ;y position of the ball
     V_x dw 2H,6H,5h,5h,6h,7h         ;Horizontal Velocity
@@ -1239,7 +1239,7 @@ MAIN ENDP
         mov ax,[bx+S_x]
         add ax,ballSize
         cmp ax,Pl_X
-        JNG bye ;second condition
+        JNG bye       ;second condition
 
         mov ax,Pl_y
         add ax,P_height
@@ -1295,13 +1295,13 @@ MAIN ENDP
 		
 		MOV AX,screenMargin
 		CMP  [bx+S_x],AX                         
-		JL negateV_x         ;BALL_X < 0 + screenMargin (Y -> collided)
+		JL destroy         ;BALL_X < 0 + screenMargin (Y -> collided)
 		
 		MOV AX,screenWidth
 		SUB AX,ballSize
 		SUB AX,screenMargin
 		CMP [bx+S_x],AX	          ;BALL_X > screenWidth - ballSize  - screenMargin (Y -> collided)
-		JG negateV_x
+		JG  destroy
 		
 		
 		MOV AX,V_Y+bx
@@ -1319,8 +1319,11 @@ MAIN ENDP
 		
 		jmp goodBye
 		
-		negateV_x:
-			NEG V_x+bx   ;BALL_VELOCITY_X = - BALL_VELOCITY_X
+		destroy:
+            mov ax,00h
+			mov V_x+bx,ax   ;BALL_VELOCITY_X = - BALL_VELOCITY_X
+            mov S_X+bx,ax
+            mov S_Y+bx,ax
 			JMP goodBye
 			
 		negateV_y:

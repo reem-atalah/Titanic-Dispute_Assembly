@@ -169,8 +169,6 @@ readKey macro ;halts program until a key is present in the keyboard buffer to co
 ENDM readKey
 
 
-
-
 blankScreen macro color, from, to
 	mov ah,06 ;Scroll (Zero lines anyway)
     mov al,00h ;to blank the screen
@@ -1158,39 +1156,63 @@ MAIN ENDP
    drawShieldRight endp
 
  ;Procedures relating to motion and collisions
- 
+
   checkRightShipCollisions proc near
+        ;pusha
         ;Check collisions with the left ship and do necessary action based on that
         ;(M.x+M.width>=N.x && M.x<=N.x+N.width && M.y+M.height>=N.y && M.y<=N.y+N.height) indicates a collision as we've demonstrated below (if any isn't satisified we escape)
         ; M is the left shield and N is the ball     
         mov bx,currentBallIndex                            
         mov ax,[bx+S_x]
         add ax,ballSize
-        cmp ax,286
+        ; mov dx, Pr_x
+        ; add dx, P_width
+        cmp ax,310
         JNG goOut ;first condition not satisified, no need to check anymore.
+
+        mov cx,0
+        cmp [bx+S_x],0
+        JNE Please_Out
+        inc cx
+        Please_Out:
+        cmp [bx+S_y],100
+        JNE Please_You_Out_Again
+        inc cx
+        Please_You_Out_Again:
+        cmp cx,2
+        JE goOut
+
+        ; mov bx,currentBallIndex                                  
+        ; mov ax,[bx+S_x]
+        ; add ax,ballSize
+        ; cmp ax,Pr_x
+        ; JNG exit ;first condition not satisified, no need to check anymore.
+
 
         ; mov ax,286
         ; add ax,shipRightWidth
         ; cmp ax,[bx+S_x]
-        ; JNG goOut ;second condition
+        ; JE goOut ;second condition
 
         ; mov ax,[bx+S_y]
         ; add ax,ballSize
         ; cmp ax,shipRightSize
-        ; JNG goOut
+        ; JE goOut
 
         ; mov ax,286
         ; add ax,shipRightSize
         ; cmp ax,[bx+S_y]
-        ; JNG goOut
+        ; JE goOut
 
         ;Reaching this point indicates that the conditions are satisified.
         cmp scoreRight,0
-        JNG goOut
+        JE goOut
         dec scoreRight 
-    
+        ret
     goOut: ;Do nothing if none is satisfied
+    ;dec scoreLeft 
     ret
+    ;popa
     checkRightShipCollisions endp
 
   checkLeftShipCollisions proc near
@@ -1199,30 +1221,44 @@ MAIN ENDP
         ; M is the left shield and N is the ball     
         mov bx,currentBallIndex                            
         mov ax,0
-        add ax,shipLeftWidth
+        add ax,10
         cmp ax,[bx+S_x]
         JNG goOutNow ;first condition not satisified, no need to check anymore.
 
-        mov ax,[bx+S_x]
-        add ax,ballSize
-        cmp ax,0
-        JNG goOutNow ;second condition
+        mov cx,0
+        cmp [bx+S_x],0
+        JNE Please_Out_n
+        inc cx
+        Please_Out_n:
+        cmp [bx+S_y],100
+        JNE Please_You_Out_Again_n
+        inc cx
+        Please_You_Out_Again_n:
+        cmp cx,2
+        JE goOutNow
 
-        mov ax,0
-        add ax,shipLeftSize
-        cmp ax,[bx+S_y]
-        JNG goOutNow
 
-        mov ax,[bx+S_y]
-        add ax,ballSize
-        cmp ax,0
-        JNG goOutNow
+        ; mov ax,[bx+S_x]
+        ; add ax,ballSize
+        ; cmp ax,0
+        ; JNG goOutNow ;second condition
+
+        ; mov ax,0
+        ; add ax,shipLeftSize
+        ; cmp ax,[bx+S_y]
+        ; JNG goOutNow
+
+        ; mov ax,[bx+S_y]
+        ; add ax,ballSize
+        ; cmp ax,0
+        ; JNG goOutNow
         ;Reaching this point indicates that the conditions are satisified.
         cmp scoreLeft,0
-        JNG goOutNow
+        JE goOutNow
         dec scoreLeft 
-    
+        ;ret
     goOutNow: ;Do nothing if none is satisfied
+    ;dec scoreLeft 
     ret
     checkLeftShipCollisions endp
 

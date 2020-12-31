@@ -498,7 +498,7 @@ endm Waves
     ;Refresher Quantities
     Sx dw 100,150,160,150,160,170      ;x position of the ball
     Sy dw 60,40,30,40,30,20         ;y position of the ball
-    Vx dw 4H,4H,4h,4h,4h,4h         ;Horizontal Velocity
+    Vx dw 4H,4H,4h,4h,4h,2h         ;Horizontal Velocity
     Vy dw 1H,1H,2h ,1h,1h,1h        ;Vertical Velocity
 
     currentBallIndex dw ? 
@@ -1238,161 +1238,35 @@ checkDestroyedCount endp
 
  ;Procedures relating to motion and collisions
 
-  checkRightShipCollisions proc near
-        ;pusha
-        ;Check collisions with the left ship and do necessary action based on that
-        ;(M.x+M.width>=N.x && M.x<=N.x+N.width && M.y+M.height>=N.y && M.y<=N.y+N.height) indicates a collision as we've demonstrated below (if any isn't satisified we escape)
-        ; M is the left shield and N is the ball     
+  checkRightShipCollisions proc near  
         mov bx,currentBallIndex                            
         mov ax,[bx+S_x]
         add ax,ballSize
-        ; mov dx, Pr_x
-        ; add dx, P_width
-        cmp ax,271
-        JNGE goOut ;first condition not satisified, no need to check anymore.
+        cmp ax,276
+        JNE goOut ;first condition not satisified, no need to check anymore.
 
-        ; mov ax,271
-        ; add ax,shipRightWidth
-        ; cmp ax,[bx+S_x]
-        ; JNGE goOut ;second condition
-
-        ; mov ax,[bx+S_y]
-        ; add ax,ballSize
-        ; cmp ax,shipRightSize
-        ; JNGE goOut
-
-        ; mov ax,271
-        ; add ax,shipRightSize
-        ; cmp ax,[bx+S_y]
-        ; JNGE goOut
-
-        ;Reaching this point indicates that the conditions are satisified.
         cmp scoreRight,0
         JNG goOut
         dec scoreRight 
         ret
     goOut: ;Do nothing if none is satisfied
-    ;dec scoreRight 
     ret
-    ;popa
     checkRightShipCollisions endp
 
   checkLeftShipCollisions proc near
-        ;Check collisions with the left ship and do necessary action based on that
-        ;(M.x+M.width>=N.x && M.x<=N.x+N.width && M.y+M.height>=N.y && M.y<=N.y+N.height) indicates a collision as we've demonstrated below (if any isn't satisified we escape)
-        ; M is the left shield and N is the ball     
-        
-        mov cx,100
-        sub cx,destroyedCount
+ 
+        mov bx,currentBallIndex                            
+        mov ax,[bx+S_x]
+        ;add ax,ballSize
+        ;sub ax,shipLeftWidth ;shipLeftWidth=34
+        cmp ax,44
+        JNE goOutNow ;first condition not satisified, no need to check anymore.
 
-        mov ah,0
-        mov al,100
-        sub al, scoreRight
-        mov bh, 2
-        div bh   ;al=ax/bh , ah=ax%bh = 0
-
-        add cx,ax
-
-        mov bh,0
-        mov bl,scoreLeft
-
-        cmp cx,bx
-        JGE goOutNow
+        ;Reaching this point indicates that the conditions are satisified.
         cmp scoreLeft,0
         JNG goOutNow 
         dec scoreLeft
-        ret
-
-        ; hi:
-        ; mov bh,0
-        ; mov bl,scoreLeft
-        ; cmp cx,bx
-        ; JE goOutNow
-        ; dec scoreLeft
-        ; JMP hi
-
-        ; mov bx,currentBallIndex                            
-        ; mov ax,49        
-        ; sub ax,shipLeftWidth ;shipLeftWidth=34
-        ; cmp ax,[bx+S_x]
-        ; JNE goOutNow ;first condition not satisified, no need to check anymore.
-
-
-        ; mov ah,0
-        ; mov al,100
-        ; sub al, scoreRight
-        ; mov bh, 2
-        ; div bh   ;al=ax/bh , ah=ax%bh = 0
-
-        ; mov cx,ax
-
-        ; mov ah,0
-        ; mov al,100
-        ; sub al, scoreLeft
-        ; mov bh, 2
-        ; div bh   ;al=ax/bh , ah=ax%bh = 0
-
-        ; add cx,ax
-
-        ; cmp cx, destroyedCount  ;if scoreLeft+ScoreRight=destroyedCount then no collision then out
-        ; JE goOutNow
-        
-        ; cmp scoreLeft,0
-        ; JNG goOutNow 
-        ; dec scoreLeft
-        ; ret
-
-        ; mov cx,0
-        ; mov bx,currentBallIndex 
-        ; cmp [bx+S_x],0
-        ; JNE Please_Out_n
-        ; inc cx
-        ; Please_Out_n:
-        ; cmp [bx+S_y],100
-        ; JNE Please_You_Out_Again_n
-        ; inc cx
-        ; Please_You_Out_Again_n:
-        ; cmp cx,2
-        ; ; JE AreYouDestroyed
-        ; JE goOutNow
-
-        ; AreYouDestroyed:
-        ; mov cx, destroyedCount
-
-        ; mov ah,0
-        ; mov al,100
-        ; sub al, scoreRight
-        ; mov bh, 2
-        ; div bh   ;al=ax/bh , ah=ax%bh = 0
-
-        ; cmp cx,ax
-        ; ;cmp ah,1
-        ; JNL goOutNow
-        ; cmp scoreLeft,0
-        ; JNG goOutNow 
-        ; dec scoreLeft
-        ; ret
-
-        ; mov ax,[bx+S_x]
-        ; add ax,ballSize
-        ; cmp ax,0
-        ; JNG goOutNow ;second condition
-
-        ; mov ax,0
-        ; add ax,shipLeftSize
-        ; cmp ax,[bx+S_y]
-        ; JNG goOutNow
-
-        ; mov ax,[bx+S_y]
-        ; add ax,ballSize
-        ; cmp ax,0
-        ; JNG goOutNow
-
-        ;Reaching this point indicates that the conditions are satisified.
-        ; cmp scoreLeft,0
-        ; JNG goOutNow 
-        ; dec scoreLeft
-        ; ret   
+        ret   
 
     goOutNow: ;Do nothing if none is satisfied
     ret
@@ -1507,6 +1381,9 @@ checkDestroyedCount endp
             mov al,00h
             mov colorBall,al
         Destroy:
+        mov ax,0
+        cmp V_x+bx,ax
+        JE goodBye
         mov ax,2
         add destroyedCount,ax
         mov ax,0

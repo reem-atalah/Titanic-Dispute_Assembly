@@ -1022,7 +1022,9 @@ endm Waves
     scoreRight DB 100
     destroyedBallsCountHealth db 255
     MINUTES Db 0
- 
+    RightLose db 'Right Player lost:( Left player Wins^_^','$'
+    LeftLose db 'Left Player lost:( Right player Wins^_^','$'
+    quitGame db 'Press any key to quit game','$'
 
 .Code
     MAIN PROC FAR 
@@ -1044,7 +1046,7 @@ endm Waves
     blankScreen 104,0,4fh
     Print MSG3
     blankScreen 104,0,7
-    blankScreen2 07,15h,18h          ;drow notification bar
+    blankScreen2 07,15h,18h          ;draw notification bar
     Getchar:                      ;get the player's decision
     ;checkMousePointer
     ; drawPlatform  65, 85, 15, 10, 240
@@ -1118,9 +1120,35 @@ MAIN ENDP
         setTextCursor 35,2                       ;Set Cursor for position of rightscore
         displayNumber scoreRight                 ;draw rightscore
 
+        cmp scoreRight,0                         ;check if right lost the game
+        JNE LeftPlayerLoses
+        RightPlayerLoses:
+        blankScreen 104,0,4fh 
+        setTextCursor 1,7 
+        Print RightLose                          ;give a message with loser
+        setTextCursor 2,10
+        Print quitGame
+        readKey                                    ;take any button to quit game
+        jz quitGameNow
+
+        LeftPlayerLoses:
+        cmp scoreLeft,0                         ;check if left lost the game
+        JNE kobry
+        blankScreen 104,0,4fh  
+        setTextCursor 1,7
+        Print LeftLose
+        setTextCursor 2,10
+        Print quitGame
+        readKey
+        jz quitGameNow
+
+    kobry:
     jmp whileTime
-           
-    ;return
+
+    quitGameNow:
+        videoMode 03h ;Text mode. 
+        return 
+   ;return
    GameProc ENDP 
     
 ;description

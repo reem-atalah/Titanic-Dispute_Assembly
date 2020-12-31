@@ -41,10 +41,18 @@ MAIN PROC FAR
 
 hi:
     graphicsMode 13h   
-    setTextCursor 35,2 ;first: column, second: row
+    setTextCursor 2,7 ;first: column, second: row
     ;blankScreen 104,0,4fh
 
     Instructions1:
+        lea dx, [inst1]
+        mov dx, offset inst1
+        mov ah, 9
+        int 21h
+
+    setTextCursor 2,10 ;first: column, second: row
+
+    Instructions2:
         lea dx, [inst1]
         mov dx, offset inst1
         mov ah, 9

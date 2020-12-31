@@ -488,7 +488,7 @@ endm Waves
     ;Data variables relating to the ball
 	screenWidth DW 320      ;the width of the window (320 pixels)
 	screenHeight DW 200     ;the height of the window (200 pixels)
-    screenMarginx DW 42       ;variable used to check collisions early
+    screenMarginx DW 32       ;variable used to check collisions early
 	screenMarginy DW 6       ;variable used to check collisions early
     destroyedCount DW 0
     S_x dw 100,150,160,150,160,170      ;x position of the ball
@@ -1104,7 +1104,7 @@ MAIN ENDP
         call GenerateBallsWithtime                                           ;if a centisecond passes (won't be triggered for any less time)
         mov Centiseconds,dl                     ;centisecond(s) has passed update the time variable with the new time.
         ;Motion V_x, V_y                        ;Call the velocity macro, note that it deals with collisions inside.
-        blankScreen 104,5,34                    ;Color, from, to (on the x-axis)
+        blankScreen 104,1,35                    ;Color, from, to (on the x-axis)
         Waves                                   ;repeated calls to static waves
         Waves  
                                      ;repeated calls to staric waves
@@ -1239,12 +1239,41 @@ checkDestroyedCount endp
  ;Procedures relating to motion and collisions
 
   checkRightShipCollisions proc near  
-        mov bx,currentBallIndex                            
-        mov ax,[bx+S_x]
-        add ax,ballSize
-        cmp ax,276
+        mov bx,currentBallIndex  
+        mov ax, screenWidth                          
+        sub ax,screenMarginx
+        sub ax,ballSize
+        cmp ax,[bx+S_x]
+        JNE goOut1 ;first condition not satisified, no need to check anymore.
+        JE goOutLast
+
+        goOut1:
+        mov ax, screenWidth                          
+        sub ax,screenMarginx
+        sub ax,ballSize
+        sub ax,1
+        cmp ax,[bx+S_x]
+        JNE goOut2 ;first condition not satisified, no need to check anymore.
+        JE goOutLast
+
+        goOut2:
+        mov ax, screenWidth                          
+        sub ax,screenMarginx
+        sub ax,ballSize
+        sub ax,2
+        cmp ax,[bx+S_x]
+        JNE goOut3 ;first condition not satisified, no need to check anymore.
+        JE goOutLast
+
+        goOut3:
+        mov ax, screenWidth                          
+        sub ax,screenMarginx
+        sub ax,ballSize
+        sub ax,3
+        cmp ax,[bx+S_x]
         JNE goOut ;first condition not satisified, no need to check anymore.
 
+        goOutLast:
         cmp scoreRight,0
         JNG goOut
         dec scoreRight 
@@ -1254,15 +1283,39 @@ checkDestroyedCount endp
     checkRightShipCollisions endp
 
   checkLeftShipCollisions proc near
- 
+
         mov bx,currentBallIndex                            
         mov ax,[bx+S_x]
-        ;add ax,ballSize
-        ;sub ax,shipLeftWidth ;shipLeftWidth=34
-        cmp ax,44
+        cmp ax, screenMarginx
+        JNE goOutNow1 ;first condition not satisified, no need to check anymore.
+        JE goOutNowLast
+
+        goOutNow1:
+        mov bx,currentBallIndex                            
+        mov ax,[bx+S_x]
+        sub ax, 1
+        cmp ax, screenMarginx
+        JNE goOutNow2 ;first condition not satisified, no need to check anymore.
+        JE goOutNowLast
+
+        goOutNow2:
+        mov bx,currentBallIndex                            
+        mov ax,[bx+S_x]
+        sub ax, 2
+        cmp ax, screenMarginx
+        JNE goOutNow3 ;first condition not satisified, no need to check anymore.
+        JE goOutNowLast
+
+        goOutNow3:
+        mov bx,currentBallIndex                            
+        mov ax,[bx+S_x]
+        sub ax, 3
+        cmp ax, screenMarginx
         JNE goOutNow ;first condition not satisified, no need to check anymore.
+        JE goOutNowLast
 
         ;Reaching this point indicates that the conditions are satisified.
+        goOutNowLast:
         cmp scoreLeft,0
         JNG goOutNow 
         dec scoreLeft

@@ -106,6 +106,7 @@ ENDM videoMode
 
     drawPlatform macro x, y, color, height, width ;x, y are the starting position (top left corner)
        local whilePlatformBeingDrawn
+        pusha
         mov cx,x                        
         mov dx,y                                
         whilePlatformBeingDrawn:
@@ -117,6 +118,7 @@ ENDM videoMode
             inc dx
             checkDifference dx, y, height
         JNG whilePlatformBeingDrawn
+        popa
     endm drawPlatform
 
 
@@ -226,19 +228,16 @@ blankScreen2 macro color, from, to
 
 ENDM blankScreen 
 
-; blankTextScreen macro 
-; 	mov ah,06 ;Scroll (Zero lines anyway)
-;     mov al,00h ;to blank the screen
-; 	mov bh,104 ;color to blank the screen with
-;     mov ch,1
-;     mov cl,5
-;     mov dh,2
-;     mov dl,34
-;  ;to the end of the screen
-; 	int 10h
 
-; ENDM blankTextScreen 
-
+    resetMouse macro
+    mov  ax, 0000h  ; reset mouse
+    int  33h       
+    endm resetMouse
+    
+    showMouse macro
+   mov  ax, 0001h  ; show mouse
+    int  33h
+    endm resetMouse
 
 blankTextScreen macro 
 	mov ah,06 ;Scroll (Zero lines anyway)
@@ -408,6 +407,19 @@ shieldControlSecond macro P_y, upKey, downKey ;Takes the dimension that we would
     
 endm shieldControlSecond
 
+checkMouseRegion macro from_x,to_x,from_y,to_y
+      local itsOver
+      cmp cx,from_x
+      jb itsOver
+      cmp cx,to_x
+      ja itsOver
+      cmp dx,from_y
+      jb itsOver
+      cmp dx,to_y
+     ja itsOver
+     xor ax,ax
+     itsOver:
+endm checkMouseRegion
 
 resetPosition macro So_x,So_y ;Positions to which we would like to reset the ball
     ;Resetting x-position
@@ -455,20 +467,20 @@ endm staticShipRight
        
 
 dynamicBalls macro
-        mov bp,0h
+        mov bx,0h
         ballDynamics:
-            mov currentBallIndex,bp
+            mov currentBallIndex,bx
             call moveBall
-            add bp,2  ; counter
-            cmp bp,ballCount  ;size of array              
+            add bx,2  ; counter
+            cmp bx,ballCount  ;size of array              
         jl ballDynamics
-        mov bp,0h
+        mov bx,0h
         ballGraphics:
-            mov currentBallIndex,bp
+            mov currentBallIndex,bx
             call checkDestroyedCount
             CALL drawBall
-            add bp,2
-            cmp bp,ballCount
+            add bx,2
+            cmp bx,ballCount
         jL ballGraphics
 endm dynamicBalls
 
@@ -488,22 +500,22 @@ endm Waves
     ;Data variables relating to the ball
 	screenWidth DW 320      ;the width of the window (320 pixels)
 	screenHeight DW 200     ;the height of the window (200 pixels)
-    screenMarginx DW 42       ;variable used to check collisions early
+    screenMarginx DW 32       ;variable used to check collisions early
 	screenMarginy DW 6       ;variable used to check collisions early
     destroyedCount DW 0
-    S_x dw 100,150,160,150,160,170      ;x position of the ball
-    S_y dw 60,40,30,40,30,20         ;y position of the ball
-    V_x dw 4H,4H,4h,4h,4h,4h         ;Horizontal Velocity
-    V_y dw 1H,1H,2h ,1h,1h,1h        ;Vertical Velocity
+    S_x dw 32,265,55,265,55,265      ;x position of the ball
+    S_y dw 50,150,150,50,50,150         ;y position of the ball
+    V_x dw 4H,0fffcH,4h,0fffch,4h,0fffch         ;Horizontal Velocity
+    V_y dw 1H,1H,1h,1h,1h,1h        ;Vertical Velocity
     ;Refresher Quantities
     Sx dw 100,150,160,150,160,170      ;x position of the ball
     Sy dw 60,40,30,40,30,20         ;y position of the ball
-    Vx dw 4H,4H,4h,4h,4h,4h         ;Horizontal Velocity
+    Vx dw 4H,4H,4h,4h,4h,2h         ;Horizontal Velocity
     Vy dw 1H,1H,2h ,1h,1h,1h        ;Vertical Velocity
 
     currentBallIndex dw ? 
     ballCount dw 4h
-    colorBall db 0eh
+    colorBall db 0h
     Centiseconds db 0;To check if a centisecond has passed.
     ;Data variables relating to the Shield (Pl (Left), Pr(Right)):
     colorShield db 0h
@@ -512,11 +524,11 @@ endm Waves
     Pr_x dw 265
     Pr_y dw 50
     P_Velocity dw 20
-    Msg db 11 dup(10,13),09h,"Please Enter Your Name:",2 dup(10,13),09h,'$'
+    Msg db 20 dup(10,13),09h,"Please Enter Your Name:",2 dup(10,13),09h,'$'
     UserName db 30,?, 30 dup('$')
     playerName2 db "Radwa",'$'
-    sendchat db 11 dup(10,13),"you send a chat invitation to ",'$'
-    sendgame db 11 dup(10,13),"you send a game invitation to ",'$'
+    sendchat db 11 dup(10,13),"you sent a chat invitation to ",'$'
+    sendgame db 11 dup(10,13),"you sent a game invitation to ",'$'
     Msg2 db 2 dup(10,13),09h,"PLease Enter Any Key To continue",'$'
     Msg3 db 7 dup(10,13),09h,"*To start chatting press F1",2 dup(10,13),09h,"*To start game press F2",2 dup(10,13),09h,"*To end the program press ESC",'$'
 ;Graphics:
@@ -1047,22 +1059,32 @@ endm Waves
     Print MSG3
     blankScreen 104,0,7
     blankScreen2 07,15h,18h          ;draw notification bar
+        resetMouse
+        showMouse
+
     Getchar:                      ;get the player's decision
-    ;checkMousePointer
-    ; drawPlatform  65, 85, 15, 10, 240
-    ; cmp bx,1
-    ; jnz getChar
-    ; cmp cx,65
-    ; jb done
-    ; cmp cx,305
-    ; ja done
-    ; cmp dx,85
-    ; jb done
-    ; cmp dx,95
-    ; ja done
-    ; JMP Exit
-    ; done:
-    ;jmp getChar
+;drawPlatform  45, 55, 15, 10, 240
+    checkMousePointer
+    cmp bx,1
+      jne getChar
+      shr cx,1
+    ;Checking if mouse click was on exit game.
+    checkMouseRegion  65,305,85,95
+      cmp ax,0
+      Jne checkGame
+      JMP ExitGame
+      checkGame:
+    checkMouseRegion 65,305,70,80
+      cmp ax,0
+      Jne checkChat
+     JMP theGame
+     checkChat:
+    checkMouseRegion 65,305,55,65
+      cmp ax,0
+      Jne checkOnceMore
+     jmp Chat
+    checkOnceMore:
+     jmp getChar
     readKey
     cmp ah,3Bh                       ;scancode for F1
     JZ  Chat
@@ -1100,11 +1122,12 @@ MAIN ENDP
         checkTimePassed Centiseconds
         
 
-    JE whileTime       
-        call GenerateBallsWithtime                                           ;if a centisecond passes (won't be triggered for any less time)
+    JE whileTime                                   ;if a centisecond passes (won't be triggered for any less time)
+
         mov Centiseconds,dl                     ;centisecond(s) has passed update the time variable with the new time.
+        call generateBallsWithTime
         ;Motion V_x, V_y                        ;Call the velocity macro, note that it deals with collisions inside.
-        blankScreen 104,5,34                    ;Color, from, to (on the x-axis)
+        blankScreen 104,4,35                    ;Color, from, to (on the x-axis)
         Waves                                   ;repeated calls to static waves
         Waves  
                                      ;repeated calls to staric waves
@@ -1180,7 +1203,7 @@ MAIN ENDP
     mov bx,currentBallIndex
     mov SI, offset ball
     whilePixels:
-       drawDynamicPixel [SI],[SI+1],[SI+2], [bx+S_y],[bx+S_x]
+       drawDynamicPixel [SI],[SI+1],colorBall, [bx+S_y],[bx+S_x]
        add SI,3
        cmp SI,offset ballSize
     JNE whilePixels
@@ -1238,161 +1261,88 @@ checkDestroyedCount endp
 
  ;Procedures relating to motion and collisions
 
-  checkRightShipCollisions proc near
-        ;pusha
-        ;Check collisions with the left ship and do necessary action based on that
-        ;(M.x+M.width>=N.x && M.x<=N.x+N.width && M.y+M.height>=N.y && M.y<=N.y+N.height) indicates a collision as we've demonstrated below (if any isn't satisified we escape)
-        ; M is the left shield and N is the ball     
-        mov bx,currentBallIndex                            
-        mov ax,[bx+S_x]
-        add ax,ballSize
-        ; mov dx, Pr_x
-        ; add dx, P_width
-        cmp ax,271
-        JNGE goOut ;first condition not satisified, no need to check anymore.
+  checkRightShipCollisions proc near  
+        mov bx,currentBallIndex  
+        mov ax, screenWidth                          
+        sub ax,screenMarginx
+        sub ax,ballSize
+        cmp ax,[bx+S_x]
+        JNE goOut1 ;first condition not satisified, no need to check anymore.
+        JE goOutLast
 
-        ; mov ax,271
-        ; add ax,shipRightWidth
-        ; cmp ax,[bx+S_x]
-        ; JNGE goOut ;second condition
+        goOut1:
+        mov ax, screenWidth                          
+        sub ax,screenMarginx
+        sub ax,ballSize
+        sub ax,1
+        cmp ax,[bx+S_x]
+        JNE goOut2 ;first condition not satisified, no need to check anymore.
+        JE goOutLast
 
-        ; mov ax,[bx+S_y]
-        ; add ax,ballSize
-        ; cmp ax,shipRightSize
-        ; JNGE goOut
+        goOut2:
+        mov ax, screenWidth                          
+        sub ax,screenMarginx
+        sub ax,ballSize
+        sub ax,2
+        cmp ax,[bx+S_x]
+        JNE goOut3 ;first condition not satisified, no need to check anymore.
+        JE goOutLast
 
-        ; mov ax,271
-        ; add ax,shipRightSize
-        ; cmp ax,[bx+S_y]
-        ; JNGE goOut
+        goOut3:
+        mov ax, screenWidth                          
+        sub ax,screenMarginx
+        sub ax,ballSize
+        sub ax,3
+        cmp ax,[bx+S_x]
+        JNE goOut ;first condition not satisified, no need to check anymore.
 
-        ;Reaching this point indicates that the conditions are satisified.
+        goOutLast:
         cmp scoreRight,0
         JNG goOut
         dec scoreRight 
         ret
     goOut: ;Do nothing if none is satisfied
-    ;dec scoreRight 
     ret
-    ;popa
     checkRightShipCollisions endp
 
   checkLeftShipCollisions proc near
-        ;Check collisions with the left ship and do necessary action based on that
-        ;(M.x+M.width>=N.x && M.x<=N.x+N.width && M.y+M.height>=N.y && M.y<=N.y+N.height) indicates a collision as we've demonstrated below (if any isn't satisified we escape)
-        ; M is the left shield and N is the ball     
-        
-        mov cx,100
-        sub cx,destroyedCount
 
-        mov ah,0
-        mov al,100
-        sub al, scoreRight
-        mov bh, 2
-        div bh   ;al=ax/bh , ah=ax%bh = 0
+        mov bx,currentBallIndex                            
+        mov ax,[bx+S_x]
+        cmp ax, screenMarginx
+        JNE goOutNow1 ;first condition not satisified, no need to check anymore.
+        JE goOutNowLast
 
-        add cx,ax
+        goOutNow1:
+        mov bx,currentBallIndex                            
+        mov ax,[bx+S_x]
+        sub ax, 1
+        cmp ax, screenMarginx
+        JNE goOutNow2 ;first condition not satisified, no need to check anymore.
+        JE goOutNowLast
 
-        mov bh,0
-        mov bl,scoreLeft
+        goOutNow2:
+        mov bx,currentBallIndex                            
+        mov ax,[bx+S_x]
+        sub ax, 2
+        cmp ax, screenMarginx
+        JNE goOutNow3 ;first condition not satisified, no need to check anymore.
+        JE goOutNowLast
 
-        cmp cx,bx
-        JGE goOutNow
+        goOutNow3:
+        mov bx,currentBallIndex                            
+        mov ax,[bx+S_x]
+        sub ax, 3
+        cmp ax, screenMarginx
+        JNE goOutNow ;first condition not satisified, no need to check anymore.
+        JE goOutNowLast
+
+        ;Reaching this point indicates that the conditions are satisified.
+        goOutNowLast:
         cmp scoreLeft,0
         JNG goOutNow 
         dec scoreLeft
-        ret
-
-        ; hi:
-        ; mov bh,0
-        ; mov bl,scoreLeft
-        ; cmp cx,bx
-        ; JE goOutNow
-        ; dec scoreLeft
-        ; JMP hi
-
-        ; mov bx,currentBallIndex                            
-        ; mov ax,49        
-        ; sub ax,shipLeftWidth ;shipLeftWidth=34
-        ; cmp ax,[bx+S_x]
-        ; JNE goOutNow ;first condition not satisified, no need to check anymore.
-
-
-        ; mov ah,0
-        ; mov al,100
-        ; sub al, scoreRight
-        ; mov bh, 2
-        ; div bh   ;al=ax/bh , ah=ax%bh = 0
-
-        ; mov cx,ax
-
-        ; mov ah,0
-        ; mov al,100
-        ; sub al, scoreLeft
-        ; mov bh, 2
-        ; div bh   ;al=ax/bh , ah=ax%bh = 0
-
-        ; add cx,ax
-
-        ; cmp cx, destroyedCount  ;if scoreLeft+ScoreRight=destroyedCount then no collision then out
-        ; JE goOutNow
-        
-        ; cmp scoreLeft,0
-        ; JNG goOutNow 
-        ; dec scoreLeft
-        ; ret
-
-        ; mov cx,0
-        ; mov bx,currentBallIndex 
-        ; cmp [bx+S_x],0
-        ; JNE Please_Out_n
-        ; inc cx
-        ; Please_Out_n:
-        ; cmp [bx+S_y],100
-        ; JNE Please_You_Out_Again_n
-        ; inc cx
-        ; Please_You_Out_Again_n:
-        ; cmp cx,2
-        ; ; JE AreYouDestroyed
-        ; JE goOutNow
-
-        ; AreYouDestroyed:
-        ; mov cx, destroyedCount
-
-        ; mov ah,0
-        ; mov al,100
-        ; sub al, scoreRight
-        ; mov bh, 2
-        ; div bh   ;al=ax/bh , ah=ax%bh = 0
-
-        ; cmp cx,ax
-        ; ;cmp ah,1
-        ; JNL goOutNow
-        ; cmp scoreLeft,0
-        ; JNG goOutNow 
-        ; dec scoreLeft
-        ; ret
-
-        ; mov ax,[bx+S_x]
-        ; add ax,ballSize
-        ; cmp ax,0
-        ; JNG goOutNow ;second condition
-
-        ; mov ax,0
-        ; add ax,shipLeftSize
-        ; cmp ax,[bx+S_y]
-        ; JNG goOutNow
-
-        ; mov ax,[bx+S_y]
-        ; add ax,ballSize
-        ; cmp ax,0
-        ; JNG goOutNow
-
-        ;Reaching this point indicates that the conditions are satisified.
-        ; cmp scoreLeft,0
-        ; JNG goOutNow 
-        ; dec scoreLeft
-        ; ret   
+        ret   
 
     goOutNow: ;Do nothing if none is satisfied
     ret
@@ -1503,6 +1453,9 @@ checkDestroyedCount endp
             mov al,00h
             mov colorBall,al
         Destroy:
+        mov ax,0
+        cmp V_x+bx,ax
+        JE goodBye
         mov ax,2
         add destroyedCount,ax
         mov ax,0

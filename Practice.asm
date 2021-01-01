@@ -1829,12 +1829,15 @@ MAIN ENDP
    drawBall proc near
     mov ah,0ch
     mov bx,currentBallIndex
+    cmp V_x+bx,0000h
+    jz Notdrow
     mov SI, offset ball
     whilePixels:
        drawDynamicPixel [SI],[SI+1],colorBall, [bx+S_y],[bx+S_x]
        add SI,3
        cmp SI,offset ballSize
     JNE whilePixels
+    Notdrow:
     ret
    drawBall endp
    

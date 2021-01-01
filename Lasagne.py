@@ -20,7 +20,7 @@ def RGBto8bit(Pixels): #This will be given RGB pixels and will return 8-bit ones
 
 def imageToAssembly():
     textFile = open("Image.txt", "a") #Opening Image.txt to write on it the commands that describe the image. ("w" for append mode) 
-    thumbinal = Image.open('shield.png') #So that you recall that you need to scale the image to the preffered size first.
+    thumbinal = Image.open('youLost.png') #So that you recall that you need to scale the image to the preffered size first.
     Pixels = numpy.array(thumbinal) #Converting the RGB image to pixels, each pixel corresponds to three valus
      #Converting the image from RGB to 8-bit pixels to be suitable for view on assembly:
     Pixels=RGBto8bit(Pixels)
@@ -29,17 +29,20 @@ def imageToAssembly():
     Columns = len(Pixels[0])
     #Now that the image is suitable for assembly, let's loop on all pixels and generate the suitable pixel.
     #Loop:
-    textFile.write("image db ")
+    i=0
+    textFile.write("defeat db ")
     for y in range(Rows):
         for x in range(Columns):
             if(Pixels[y][x][3]!=0): #when dealing with pngs (RGBA) if A is 0 then that indiacates transperancy and that should be skipped
+                i=i+1
                 color = Pixels[y][x][0] #Remember that we set the zeroth pixel to the best 8-bit
                 textFile.write("{},{},{},".format(x,y,color)) #Generate the code that draws that pixel, here the output list has form x,y,color,x1,y1,color1....
-        textFile.seek(textFile.tell()-1, os.SEEK_SET)
-        textFile.truncate()        
-        if(y != len(Pixels)-1):
-            textFile.write("\ndb ") 
-    textFile.write("\nimageSize dw {} \n ".format(len(Pixels))) #Reem changed from db => dw
+                if(i==30):
+                    textFile.seek(textFile.tell()-1, os.SEEK_SET)
+                    textFile.truncate()        #Delete one characters whenever a row is done (the comma)
+                    textFile.write("\ndb ")    #endline
+                    i=0
+    textFile.write("\ndefeatSize dw {} \n ".format(len(Pixels))) #Reem changed from db => dw
 
 imageToAssembly()
 

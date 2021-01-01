@@ -106,6 +106,7 @@ ENDM videoMode
 
     drawPlatform macro x, y, color, height, width ;x, y are the starting position (top left corner)
        local whilePlatformBeingDrawn
+        pusha
         mov cx,x                        
         mov dx,y                                
         whilePlatformBeingDrawn:
@@ -117,6 +118,7 @@ ENDM videoMode
             inc dx
             checkDifference dx, y, height
         JNG whilePlatformBeingDrawn
+        popa
     endm drawPlatform
 
 
@@ -226,19 +228,16 @@ blankScreen2 macro color, from, to
 
 ENDM blankScreen 
 
-; blankTextScreen macro 
-; 	mov ah,06 ;Scroll (Zero lines anyway)
-;     mov al,00h ;to blank the screen
-; 	mov bh,104 ;color to blank the screen with
-;     mov ch,1
-;     mov cl,5
-;     mov dh,2
-;     mov dl,34
-;  ;to the end of the screen
-; 	int 10h
 
-; ENDM blankTextScreen 
-
+    resetMouse macro
+    mov  ax, 0000h  ; reset mouse
+    int  33h       
+    endm resetMouse
+    
+    showMouse macro
+   mov  ax, 0001h  ; show mouse
+    int  33h
+    endm resetMouse
 
 blankTextScreen macro 
 	mov ah,06 ;Scroll (Zero lines anyway)
@@ -408,6 +407,19 @@ shieldControlSecond macro P_y, upKey, downKey ;Takes the dimension that we would
     
 endm shieldControlSecond
 
+checkMouseRegion macro from_x,to_x,from_y,to_y
+      local itsOver
+      cmp cx,from_x
+      jb itsOver
+      cmp cx,to_x
+      ja itsOver
+      cmp dx,from_y
+      jb itsOver
+      cmp dx,to_y
+     ja itsOver
+     xor ax,ax
+     itsOver:
+endm checkMouseRegion
 
 resetPosition macro So_x,So_y ;Positions to which we would like to reset the ball
     ;Resetting x-position
@@ -455,20 +467,20 @@ endm staticShipRight
        
 
 dynamicBalls macro
-        mov bp,0h
+        mov bx,0h
         ballDynamics:
-            mov currentBallIndex,bp
+            mov currentBallIndex,bx
             call moveBall
-            add bp,2  ; counter
-            cmp bp,ballCount  ;size of array              
+            add bx,2  ; counter
+            cmp bx,ballCount  ;size of array              
         jl ballDynamics
-        mov bp,0h
+        mov bx,0h
         ballGraphics:
-            mov currentBallIndex,bp
+            mov currentBallIndex,bx
             call checkDestroyedCount
             CALL drawBall
-            add bp,2
-            cmp bp,ballCount
+            add bx,2
+            cmp bx,ballCount
         jL ballGraphics
 endm dynamicBalls
 
@@ -491,10 +503,10 @@ endm Waves
     screenMarginx DW 32       ;variable used to check collisions early
 	screenMarginy DW 6       ;variable used to check collisions early
     destroyedCount DW 0
-    S_x dw 100,150,160,150,160,170      ;x position of the ball
-    S_y dw 60,40,30,40,30,20         ;y position of the ball
-    V_x dw 4H,4H,4h,4h,4h,4h         ;Horizontal Velocity
-    V_y dw 1H,1H,2h ,1h,1h,1h        ;Vertical Velocity
+    S_x dw 32,265,55,265,55,265      ;x position of the ball
+    S_y dw 50,150,150,50,50,150         ;y position of the ball
+    V_x dw 4H,0fffcH,4h,0fffch,4h,0fffch         ;Horizontal Velocity
+    V_y dw 1H,1H,1h,1h,1h,1h        ;Vertical Velocity
     ;Refresher Quantities
     Sx dw 100,150,160,150,160,170      ;x position of the ball
     Sy dw 60,40,30,40,30,20         ;y position of the ball
@@ -503,7 +515,7 @@ endm Waves
 
     currentBallIndex dw ? 
     ballCount dw 4h
-    colorBall db 0eh
+    colorBall db 0h
     Centiseconds db 0;To check if a centisecond has passed.
     ;Data variables relating to the Shield (Pl (Left), Pr(Right)):
     colorShield db 0h
@@ -512,11 +524,11 @@ endm Waves
     Pr_x dw 265
     Pr_y dw 50
     P_Velocity dw 20
-    Msg db 11 dup(10,13),09h,"Please Enter Your Name:",2 dup(10,13),09h,'$'
+    Msg db 20 dup(10,13),09h,"Please Enter Your Name:",2 dup(10,13),09h,'$'
     UserName db 30,?, 30 dup('$')
     playerName2 db "Radwa",'$'
-    sendchat db 11 dup(10,13),"you send a chat invitation to ",'$'
-    sendgame db 11 dup(10,13),"you send a game invitation to ",'$'
+    sendchat db 11 dup(10,13),"you sent a chat invitation to ",'$'
+    sendgame db 11 dup(10,13),"you sent a game invitation to ",'$'
     Msg2 db 2 dup(10,13),09h,"PLease Enter Any Key To continue",'$'
     Msg3 db 7 dup(10,13),09h,"*To start chatting press F1",2 dup(10,13),09h,"*To start game press F2",2 dup(10,13),09h,"*To end the program press ESC",'$'
 ;Graphics:
@@ -1047,22 +1059,32 @@ endm Waves
     Print MSG3
     blankScreen 104,0,7
     blankScreen2 07,15h,18h          ;draw notification bar
+        resetMouse
+        showMouse
+
     Getchar:                      ;get the player's decision
-    ;checkMousePointer
-    ; drawPlatform  65, 85, 15, 10, 240
-    ; cmp bx,1
-    ; jnz getChar
-    ; cmp cx,65
-    ; jb done
-    ; cmp cx,305
-    ; ja done
-    ; cmp dx,85
-    ; jb done
-    ; cmp dx,95
-    ; ja done
-    ; JMP Exit
-    ; done:
-    ;jmp getChar
+;drawPlatform  45, 55, 15, 10, 240
+    checkMousePointer
+    cmp bx,1
+      jne getChar
+      shr cx,1
+    ;Checking if mouse click was on exit game.
+    checkMouseRegion  65,305,85,95
+      cmp ax,0
+      Jne checkGame
+      JMP ExitGame
+      checkGame:
+    checkMouseRegion 65,305,70,80
+      cmp ax,0
+      Jne checkChat
+     JMP theGame
+     checkChat:
+    checkMouseRegion 65,305,55,65
+      cmp ax,0
+      Jne checkOnceMore
+     jmp Chat
+    checkOnceMore:
+     jmp getChar
     readKey
     cmp ah,3Bh                       ;scancode for F1
     JZ  Chat
@@ -1100,11 +1122,12 @@ MAIN ENDP
         checkTimePassed Centiseconds
         
 
-    JE whileTime       
-        call GenerateBallsWithtime                                           ;if a centisecond passes (won't be triggered for any less time)
+    JE whileTime                                   ;if a centisecond passes (won't be triggered for any less time)
+
         mov Centiseconds,dl                     ;centisecond(s) has passed update the time variable with the new time.
+        call generateBallsWithTime
         ;Motion V_x, V_y                        ;Call the velocity macro, note that it deals with collisions inside.
-        blankScreen 104,1,35                    ;Color, from, to (on the x-axis)
+        blankScreen 104,4,35                    ;Color, from, to (on the x-axis)
         Waves                                   ;repeated calls to static waves
         Waves  
                                      ;repeated calls to staric waves
@@ -1180,7 +1203,7 @@ MAIN ENDP
     mov bx,currentBallIndex
     mov SI, offset ball
     whilePixels:
-       drawDynamicPixel [SI],[SI+1],[SI+2], [bx+S_y],[bx+S_x]
+       drawDynamicPixel [SI],[SI+1],colorBall, [bx+S_y],[bx+S_x]
        add SI,3
        cmp SI,offset ballSize
     JNE whilePixels

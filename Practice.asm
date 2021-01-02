@@ -175,10 +175,10 @@ checkPossibleKey macro ; RETURNS cl=0 : NO KEY PRESSED, cl!=0 : KEY PRESSED.
 ENDM checkPossibleKey
 
 getkeyboardStatus macro ;	ZF = 0 if a key pressed, AX = 0 if no scan code is available otherwise AX=[ScanCode][ASCII], does not interrupt the program.
-    ;push ax 
+    push ax 
     mov ah,1
     int 16h
-    ;pop ax
+    pop ax
 ENDM getKeyboardStatus
 
 readKey macro ;halts program until a key is present in the keyboard buffer to consume, reads the scan code on Ah and the ASCII on AL.
@@ -206,7 +206,7 @@ blankScreen macro color, from, to
 	mov ah,06 ;Scroll (Zero lines anyway)
     mov al,00h ;to blank the screen
 	mov bh,color  ;color to blank the screen with
-    mov ch,00h
+    mov ch,0h 
     mov cl,from
     mov dh,18h
     mov dl,to
@@ -1683,7 +1683,6 @@ endm Waves
     blankScreen 0,0,4fh
     Print MSG3
     blankScreen 0,0,7
-    ;Logo 0,30
     blankScreen2 07,15h,18h          ;draw notification bar
         resetMouse
         showMouse
@@ -1691,8 +1690,8 @@ endm Waves
     Getchar:                      ;get the player's decision
 ;drawPlatform  45, 55, 15, 10, 240
     checkMousePointer
-    cmp bx,1
-      jne getChar
+      cmp bx,1
+      jne checkOnceMore
       shr cx,1
     ;Checking if mouse click was on exit game.
     checkMouseRegion  65,305,85,95
@@ -1710,7 +1709,8 @@ endm Waves
       Jne checkOnceMore
      jmp Chat
     checkOnceMore:
-     jmp getChar
+    getkeyboardStatus
+    JZ getChar ;No key was pressed
     readKey
     cmp ah,3Bh                       ;scancode for F1
     JZ  Chat
@@ -1719,6 +1719,7 @@ endm Waves
     cmp al,1Bh                       ;asscii code for ESC
     Jz ExitGame
     jmp Getchar
+
     TheGame:                        ;start the game
     Print sendGame
     Print playerName2
@@ -1762,8 +1763,8 @@ MAIN ENDP
         shieldControlSecond Pl_y,0fh,10h        ;control Pl_y up and down with Tab and Q.
         call drawShieldLeft                     ;Draw left shield
         call drawShieldRight                    ;Draw right shield
+        call showHealth
         setTextCursor 2,1                       ;Set Cursor for position of destroyedCount
-        DisplayAx destroyedCount                 ;draw destroyedCount
         setTextCursor 2,2                       ;Set Cursor for position of leftscore
         displayNumber scoreLeft                  ;draw leftscore
         setTextCursor 35,2                       ;Set Cursor for position of rightscore
@@ -1841,6 +1842,31 @@ MAIN ENDP
     ret
    drawBall endp
    
+   showHealth proc near
+        push bx
+        mov bl, ScoreLeft
+        mov bh,0
+        cmp bx,50
+        JL drawRed
+        drawPlatform  40, 1, 49, 1, bx
+        jmp checkNext
+        drawRed:
+        drawPlatform  40, 1, 41, 1, bx
+        checkNext:
+        mov bl, ScoreRight
+        mov bh,0
+        mov bp,280
+        sub bp,bx
+        cmp bx,50
+        JL drawReds
+        drawPlatform  bp, 1, 49, 1, bx
+        jmp endit
+        drawReds:
+        drawPlatform  bp, 1, 41, 1, bx
+        endit:
+        pop bx
+        ret
+    showhealth endp
 checkDestroyedCount proc near
  mov bx,currentBallIndex                            
  mov ax,destroyedCount
@@ -1863,9 +1889,6 @@ Endd:
 ret
 checkDestroyedCount endp
 ;Algorithm: 
-
-
-
     drawShieldLeft proc near
      mov ah,0ch
      mov BX, offset shield
@@ -2007,12 +2030,30 @@ checkDestroyedCount endp
         JNG bye
         ;Reaching this point indicates that the conditions are satisified.
         NEG V_x+bx
-        cmp V_y+bx,0
-        jnz bye
-        inc V_y+bx
-    
-    bye: ;Do nothing if none is satisfied
-    ret
+        ;And thus we reflect the ball about the horizontal axis.
+        ;If V_y is zero, i.e. a fresh cannon, then the reflective power of the shield gives it some vertical velocity
+        cmp V_y+bx,0 
+        jnz checkUp
+        inc V_y+bx ;some vertical velocity
+
+        checkUp:
+        ;If the ball touches the higher part of the shield, the ball is reflected such that (Vx, Vy) becomes (-Vx, -Vy)
+        mov ax,Pl_Y
+        cmp S_y,ax
+        jg checkDown
+        neg V_y
+        ;If the ball touches the lower part of the shield, the ball is reflected such that (Vx, Vy) becomes (-Vx, -Vy)
+        checkDown:
+        mov ax,Pl_y
+        add ax,P_height
+        mov bx,ballsize
+        add bx,S_y
+        cmp bx,ax
+        jng bye
+        neg V_y
+        bye:
+        ret
+
     checkLeftShieldCollisions endp
 
     checkrightShieldCollisions proc near
@@ -2041,9 +2082,26 @@ checkDestroyedCount endp
         JNG exit
         ;Reaching this point indicates that the conditions are satisified.
         NEG V_x+bx
-        cmp V_y+bx,0
-        jnz exit
-        inc V_y+bx
+        ;And thus we reflect the ball about the horizontal axis.
+        ;If V_y is zero, i.e. a fresh cannon, then the reflective power of the shield gives it some vertical velocity
+        cmp V_y+bx,0 
+        jnz skip
+        inc V_y+bx ;some vertical velocity
+        skip:
+        ;If the ball touches the higher part of the shield, the ball is reflected such that (Vx, Vy) becomes (-Vx, -Vy)
+        mov ax,Pr_Y
+        cmp S_y,ax
+        jg next
+        neg V_y
+        ;If the ball touches the lower part of the shield, the ball is reflected such that (Vx, Vy) becomes (-Vx, -Vy)
+        next:
+        mov ax,Pr_y
+        add ax,P_height
+        mov bx,ballsize
+        add bx,S_y
+        cmp bx,ax
+        jng exit
+        neg V_y
         exit:
         ret
     checkrightShieldCollisions endp

@@ -1711,7 +1711,16 @@ MAIN ENDP
         ret
     showhealth endp
 checkDestroyedCount proc near
- mov bx,currentBallIndex                            
+ mov ah,2Ch               ;get Time
+ int 21h
+ mov al,dh                
+ mov ah,00h
+ mov dh,6h
+ div dh
+ mov al,ah               ;get random number between 1,6 to get random positon
+ ;displayNumber al
+ mov ah,00h
+ mov bx,ax                           
  mov ax,destroyedCount
  cmp ax,ballcount
  JNE Endd

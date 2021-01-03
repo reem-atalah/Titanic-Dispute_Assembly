@@ -1720,7 +1720,7 @@ checkDestroyedCount proc near
  mov al,ah               ;get random number between 1,6 to get random positon
  mov cl,2h
  mul cl
- displayNumber al
+;  displayNumber al
  mov ah,00h
  mov cx,ax 
    

@@ -1655,7 +1655,7 @@ MAIN ENDP
     
     JE whileTime                                   ;if a centisecond passes (won't be triggered for any less time)
         setTextCursor 10,2                       ;Set Cursor for position of leftscore
-        displayNumber Minutes
+        ;displayNumber Minutes
         mov Centiseconds,dl                     ;centisecond(s) has passed update the time variable with the new time.
         call generateBallsWithTime
         blankScreen 104,4,35                    ;Color, from, to (on the x-axis)

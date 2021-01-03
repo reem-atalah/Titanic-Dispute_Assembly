@@ -1718,24 +1718,37 @@ checkDestroyedCount proc near
  mov dh,6h
  div dh
  mov al,ah               ;get random number between 1,6 to get random positon
- ;displayNumber al
+ mov cl,2h
+ mul cl
+ displayNumber al
  mov ah,00h
- mov bx,ax                           
+ mov cx,ax 
+   
+ displayNumber bl                       
  mov ax,destroyedCount
  cmp ax,ballcount
  JNE Endd
     mov ax,2h
     sub destroyedCount,ax
-    mov ax,Sy+bx
-    mov S_y+bx,ax
 
+    mov bx,cx
+    mov ax,Sy+bx                 ;get random value from array Sy
+    mov bx,currentBallIndex  
+    mov S_y+bx,ax                 ;but it in our original array!
+
+    mov bx,cx
     mov ax,Sx+bx
+    mov bx,currentBallIndex  
     mov S_x+bx,ax
 
+    mov bx,cx
     mov ax,Vy+bx
+    mov bx,currentBallIndex  
     mov V_y+bx,ax
     
+    mov bx,cx
     mov ax,Vx+bx
+    mov bx,currentBallIndex  
     mov V_x+bx,ax
 Endd:
 ret

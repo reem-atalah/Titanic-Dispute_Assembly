@@ -562,6 +562,13 @@ endm Waves
     sendgame db 11 dup(10,13),"you sent a game invitation to ",'$'
     Msg2 db 2 dup(10,13),09h,"PLease Enter Any Key To continue",'$'
     Msg3 db 7 dup(10,13),09h,"*To start chatting press F1",2 dup(10,13),09h,"*To start game press F2",2 dup(10,13),09h,"*To end the program press ESC",'$'
+    scoreLeft DB 100
+    scoreRight DB 100
+    destroyedBallsCountHealth db 255
+    MINUTES Db 0
+    Loses db ' lost:( ','$'
+    Wins db ' has earned victory ^_^','$'
+    quitGame db 'Press any key to go the main menu','$'
 ;Graphics:
  
     ball db 6,0,17,7,0,17,8,0,17,9,0,17,10,0,17,11,0,17,12,0,17,13,0,17
@@ -1489,13 +1496,6 @@ endm Waves
     logoFrontSize dw 105 
 
 
-    scoreLeft DB 100
-    scoreRight DB 100
-    destroyedBallsCountHealth db 255
-    MINUTES Db 0
-    RightLose db 'Right Player lost:( Left player Wins^_^','$'
-    LeftLose db 'Left Player lost:( Right player Wins^_^','$'
-    quitGame db 'Press any key to quit game','$'
 
 .Code
     MAIN PROC FAR 
@@ -1513,13 +1513,13 @@ endm Waves
     readKey                         ;get any key to continue
     videoMode 13h 
     Logo 30,30
+    Start:
     blankScreen 0,0,4fh
     Print MSG3
     blankScreen 0,0,7
     blankScreen2 07,15h,18h          ;draw notification bar
     resetMouse
     showMouse
-
     Getchar:                      ;get the player's decision
 ;drawPlatform  45, 55, 15, 10, 240
     checkMousePointer
@@ -1564,8 +1564,7 @@ endm Waves
     Print sendChat
     Print playerName2
     readKey
-    ExitGame:
-
+    ExitGame:  
  videoMode 03h ;Text mode.
 return
 MAIN ENDP 
@@ -1613,9 +1612,15 @@ MAIN ENDP
         JNE LeftPlayerLoses
         RightPlayerLoses:
         blankScreen 104,0,4fh 
-        setTextCursor 1,7
-        Print RightLose                          ;give a message with loser
-        setTextCursor 2,10
+        setTextCursor 4,6
+        print Username+2
+        setTextCursor 4,8
+        print Wins
+        setTextCursor 4,10
+        print PlayerName2
+        setTextCursor 4,12
+        print Loses        
+        setTextCursor 4,14
         Print quitGame
         ;leftWinsScreen 100,50          
         readKey                                    ;take any button to quit game
@@ -1625,9 +1630,15 @@ MAIN ENDP
         cmp scoreLeft,0                         ;check if left lost the game
         JNE kobry
         blankScreen 104,0,4fh  
-        setTextCursor 1,7
-        Print LeftLose
-        setTextCursor 2,10
+        setTextCursor 4,6
+        print playerName2
+        setTextCursor 4,8
+        print Wins
+        setTextCursor 4,10
+        print Username+2
+        setTextCursor 4,12
+        print Loses
+        setTextCursor 4,14
         Print quitGame
         ;rightWinsScreen 100,100
         readKey
@@ -1637,9 +1648,13 @@ MAIN ENDP
     jmp whileTime
 
     quitGameNow:
-        videoMode 03h ;Text mode. 
-        return 
-   ;return
+    mov ah,100
+    mov scoreLeft,ah
+    mov scoreRight,ah
+    videoMode 13h
+    jmp near ptr Start
+    videoMode 03h ;Text mode. 
+    return
    GameProc ENDP 
     
 ;description
@@ -1724,7 +1739,7 @@ checkDestroyedCount proc near
  mov ah,00h
  mov cx,ax 
    
- displayNumber bl                       
+ ;displayNumber bl                       
  mov ax,destroyedCount
  cmp ax,ballcount
  JNE Endd

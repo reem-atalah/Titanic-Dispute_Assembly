@@ -561,6 +561,10 @@ endm Waves
     sendchat db 11 dup(10,13),"you sent a chat invitation to ",'$'
     sendgame db 11 dup(10,13),"you sent a game invitation to ",'$'
     Msg2 db 2 dup(10,13),09h,"PLease Enter Any Key To continue",'$'
+    MSGFrist db 2 dup(10,13),09h,"PLease Try Again with Letter in Frist, Press any Key To continue",'$'
+    MSGLong db 2 dup(10,13),09h,"PLease Try Again with shoter name, Press any Key To continue",'$'
+    MSGshort db 2 dup(10,13),09h,"PLease Try Again with your name, Press any Key To continue",'$'
+    MSGSpecial db 2 dup(10,13),09h,"PLease Try Again Don't use Spcial char, Press any Key To continue",'$'
     Msg3 db 7 dup(10,13),09h,"*To start chatting press F1",2 dup(10,13),09h,"*To start game press F2",2 dup(10,13),09h,"*To end the program press ESC",'$'
 ;Graphics:
  
@@ -1502,12 +1506,76 @@ endm Waves
     MOV AX,@Data
     MOV DS,AX
 
+    ElBdaya:
     videoMode 13h                 ;https://stanislavs.org/helppc/int_10.html click on set video modes for all modes
     blankScreen 0,0,4fh
     Print MSG
     blankScreen 0,0,0
     Logo 30,30
     readString UserName             ;get the player name
+    mov al,0h
+    cmp UserName+1,al               ;check if it is empty string
+    jz tooShort
+    mov al,0Fh
+    cmp UserName+1,al               ; check if it is larger than 15 char
+    jg tooLong
+    ;;;;;;;;;;
+    mov cl,UserName+1
+    mov ch,00h
+    mov SI,offset UserName+2
+    LoopName:                       ;check if there is special char
+    ;mov bx,[SI]
+    mov al,30h
+    cmp [SI],al
+    jl special
+    mov al,7Ah
+    cmp [SI],al
+    jg special
+
+    mov al,40h
+    cmp [SI],al
+    je special
+
+    mov al,5Ah
+    cmp [SI],al
+    jle NEXTTT
+    mov al,61h
+    cmp [SI],al
+    jl special
+   NEXTTT:
+   inc SI
+   loop LoopName
+    ;;;;;;;;
+
+    mov al,30h                ;check if the first char not a number
+    cmp UserName+2,al
+    jl okay
+    mov al,39h
+    cmp UserName+2,al
+    jle Frist
+    jmp okay
+
+    special:
+    Print MSGSpecial
+    readKey                         ;get any key to continue
+    jmp ElBdaya
+
+    Frist:
+    Print MSGFrist
+    readKey                         ;get any key to continue
+    jmp ElBdaya
+
+    tooLong:
+    Print MSGLong
+    readKey                         ;get any key to continue
+    jmp ElBdaya
+
+    tooShort:
+    Print MSGshort
+    readKey                         ;get any key to continue
+    jmp ElBdaya
+
+    okay:                           ;Name is Valid
     Print Msg2                      ;show message of continue 
     blankScreen 0,0,0
     readKey                         ;get any key to continue

@@ -1,13 +1,13 @@
 
-setTextCursor macro dlValue,dhValue
-    pusha
-    MOV  DL, dlValue    ;SCREEN COLUMN.
-    MOV  DH, dhValue    ;SCREEN ROW.
-    MOV  AH, 2     ;SERVICE TO SET CURSOR POSITION.
-    MOV  BH, 0     ;PAGE NUMBER.
-    INT  10H       ;BIOS SCREEN SERVICES.
-    popa
-ENDM setTextCursor
+; setTextCursor macro dlValue,dhValue
+;     pusha
+;     MOV  DL, dlValue    ;SCREEN COLUMN.
+;     MOV  DH, dhValue    ;SCREEN ROW.
+;     MOV  AH, 2     ;SERVICE TO SET CURSOR POSITION.
+;     MOV  BH, 0     ;PAGE NUMBER.
+;     INT  10H       ;BIOS SCREEN SERVICES.
+;     popa
+; ENDM setTextCursor
 
 
 getkeyboardStatus macro ;	ZF = 0 if a key pressed, AX = 0 if no scan code is available otherwise AX=[ScanCode][ASCII], does not interrupt the program.
@@ -42,17 +42,47 @@ Print macro Stringo
     int 21h
 ENDM Print
 
-DisplayCharacter macro Char
-    mov dl, Char
-    ;add dl,30h
-    mov ah, 2h
-    int 21h
-ENDM DisplayCharacter
+; DisplayCharacter macro Char
+;     mov dl, Char
+;     ;add dl,30h
+;     mov ah, 2h
+;     int 21h
+; ENDM DisplayCharacter
 
 readChar macro ;al stores input ascii
     mov ah,7 ;without echo
     int 21h
 endm readChar
+getcursorposition macro
+mov ah,3h
+mov bh,00h
+int 10h
+endm getcursorposition
+
+; clearfrist macro
+; ;clear first half of screen
+;  mov ah,6 ; function 6
+;  mov al,0 ; scroll by 1 line
+;  mov bh,12 ; normal video attribute
+;  mov ch,0 ; upper left Y
+;  mov cl,0 ; upper left X
+;  mov dh,12 ; lower right Y
+;  mov dl,79 ; lower right X
+;  int 10h
+; endm clearfrist
+
+; clearsecond macro
+; ;clear second half of screen with blue
+; mov ah,6 ; function 6
+;  mov al,0 ; scroll by 1 line
+;  mov bh,21 ; normal video attribute
+;  mov ch,12 ; upper left Y
+;  mov cl,0 ; upper left X
+;  mov dh,24 ; lower right Y
+;  mov dl,79 ; lower right X
+;  int 10h
+
+; endm clearsecond 
 
 .286
 .MODEL HUGE
@@ -63,8 +93,76 @@ endm readChar
     chatTwo db 30,?, 30 dup('$')
     dummyMsg db ?
     MsgRecive db ?
+    position db 0h
+    position2 db 0h
+    Y1 db 00h
+    Y2 db 12
 
 .code 
+
+clearfrist proc
+;clear first half of screen
+ mov ah,6 ; function 6
+ mov al,0 ; scroll by 1 line
+ mov bh,12 ; normal video attribute
+ mov ch,0 ; upper left Y
+ mov cl,0 ; upper left X
+ mov dh,12 ; lower right Y
+ mov dl,79 ; lower right X
+ int 10h
+ ret
+clearfrist endp
+
+clearsecond proc
+;clear second half of screen with blue
+mov ah,6 ; function 6
+ mov al,0 ; scroll by 1 line
+ mov bh,21 ; normal video attribute
+ mov ch,12 ; upper left Y
+ mov cl,0 ; upper left X
+ mov dh,24 ; lower right Y
+ mov dl,79 ; lower right X
+ int 10h
+ ret
+clearsecond endp
+
+setTextCursorsend proc
+    
+    MOV  DL, position    ;SCREEN COLUMN.
+    MOV  DH, Y1    ;SCREEN ROW.
+    MOV  AH, 2     ;SERVICE TO SET CURSOR POSITION.
+    MOV  BH, 0     ;PAGE NUMBER.
+    INT  10H       ;BIOS SCREEN SERVICES.
+    
+    ret
+setTextCursorsend endp
+
+setTextCursorrecive proc
+    
+    MOV  DL, position2    ;SCREEN COLUMN.
+    MOV  DH, Y2    ;SCREEN ROW.
+    MOV  AH, 2     ;SERVICE TO SET CURSOR POSITION.
+    MOV  BH, 0     ;PAGE NUMBER.
+    INT  10H       ;BIOS SCREEN SERVICES.
+   
+    ret
+setTextCursorrecive endp
+
+DisplayCharacterS proc
+    mov dl, dummyMsg
+    ;add dl,30h
+    mov ah, 2h
+    int 21h
+    ret
+DisplayCharacterS endp
+
+DisplayCharacterR proc
+    mov dl, MsgRecive
+    ;add dl,30h
+    mov ah, 2h
+    int 21h
+    ret
+DisplayCharacterR endp
 
 MAIN proc far             
 mov ax,@data
@@ -100,61 +198,49 @@ mov al,00011011b
 ; 11:8bits
 out dx,al
 
-;clear first half of screen
- mov ah,6 ; function 6
- mov al,0 ; scroll by 1 line
- mov bh,12 ; normal video attribute
- mov ch,0 ; upper left Y
- mov cl,0 ; upper left X
- mov dh,12 ; lower right Y
- mov dl,79 ; lower right X
- int 10h
+CALL clearfrist
+CALL clearsecond
 
-;clear second half of screen with blue
-mov ah,6 ; function 6
- mov al,0 ; scroll by 1 line
- mov bh,21 ; normal video attribute
- mov ch,12 ; upper left Y
- mov cl,0 ; upper left X
- mov dh,24 ; lower right Y
- mov dl,79 ; lower right X
- int 10h
- 
+
 MAIN endp 
+
+
 
 TrnasmitRecieveProc proc
 
 letActionBegins:
 
-    ; readKey   
-    ; JZ letActionBegins
     
-    ; readChar
-    ; DisplayCharacter al
-
-    ; ReadString chatOne
-    ; Print chatOne ;I think it will be character by character not whole string
     
     ;send it to the uart
     ;Sending a value
     ;Check that Transmitter Holding Register is Empty
-    setTextCursor 0,0
-    mov al,0h
+    CALL setTextCursorsend
+    ;mov al,0h              ;get key pressed
     mov ah,1h;
     int 16h
-    cmp al,0h
-    jnz Send
-    jmp Recive
+    ;cmp al,0h
+    jnz Send                 ; if we get a char Send it!
+    jmp Recive               ; if we don't get check the Recive! 
 
 
     Send:
-    mov ah,1
-    int 16
-    mov ah,2
-    mov dl,al
-    int 21h
+    mov ah,0h           ;get the char from the buffer    
+    int 16h
     mov dummyMsg,al
-    setTextCursor 0,0
+    CALL  DisplayCharacterS     
+    inc position
+    CALL setTextCursorsend
+    cmp position,79        ;if we get the end of the line
+    jle  Gooooo
+    inc Y1
+    mov position,00h
+    cmp Y1,11             ;if we get the end of the half screen
+    jle Gooooo
+    CALL clearfrist       ;if we get the end we need to clear this part
+    mov Y1,00h
+    
+    Gooooo:
     mov dx , 3FDH ; Line Status Register
     AGAIN: 
         In al , dx ;Read Line Status , A byte is input into AL from the port addressed by DX
@@ -168,7 +254,7 @@ letActionBegins:
     ;Receiving a value
     ;Check that Data is Ready
     Recive:
-    setTextCursor 0,12
+    CALL setTextCursorrecive
     mov dx , 3FDH ; Line Status Register
     CHK: in al , dx
         test al , 1
@@ -177,13 +263,25 @@ letActionBegins:
         mov dx , 03F8H
         in al , dx
         mov MsgRecive , al
-        DisplayCharacter MsgRecive
+        CALL DisplayCharacterR  ;display the char recived
+        inc position2            ;increase the curser postion 
+        CALL setTextCursorrecive
+
+        cmp position2,79         ;check if we get the end of the line
+        jle letActionBegins
+        inc Y2
+        mov position2,00h
+        cmp Y2,23                ;check if we reach the end of half screen
+        jle Try
+        CALL clearsecond         ;clear the recive part
+        mov Y2,12
 
 
     ;getkeyboardStatus                ;repeated until one of the users presses the ESC key
     ;cmp al,1Bh                       ;asscii code for ESC
     ;Jz ExitGame
-     jmp letActionBegins
+    Try:
+    jmp letActionBegins
 
     ExitGame:  
         videoMode 03h ;Text mode.
@@ -191,6 +289,10 @@ letActionBegins:
     
     jmp letActionBegins
 
+
 TrnasmitRecieveProc endp
+
+
+
 
 end MAIN 

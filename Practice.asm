@@ -1,58 +1,41 @@
 ;Used Macros:
-    Print macro Stringo ;Takes a string and prints it
+    Print macro Stringo                                             ;Takes a string and prints it
         mov AH, 09h
         mov dx, offset Stringo
         int 21h
     endm Print
 
-    DisplayCharacter macro Char ;Takes a character and displays it
+    displayCharacter macro Char                                     ;Takes a character and displays it
         mov dl,  Char
         add dl, 30h
         mov ah,  2h
         int 21h
-    endm DisplayCharacter
-    
-    displayColorfulCharacter macro char
-        mov ah, 0eh
-        mov al,char    
-        mov bh,0h;background color?
-        mov bl,0h ;foreground color (graphics modes only)
-        int 10h
-    endm displayColorfulCharacter
+    endm displayCharacter
 
-    DisplayNumber macro number ;Need comments here.
+    DisplayNumber macro number                                      ;Need comments here.
         pusha
-        mov al,  number
+        mov al, number
         mov ah, 0
         mov bl, 100
         div bl
-        mov dl, al
         push ax
-        add dl, 30h
-        mov ah, 02h
-        int 21h
+        displayCharacter al
 
         pop ax
         mov bl, 10
         mov al, ah
         mov ah, 0
-        div bl  
-        mov dl, al
-        push ax
-        add dl, 30h
-        mov ah, 02h
-        int 21h
+        div bl
+        push ax  
+        displayCharacter al
         
         pop ax
-        mov dl, ah
-        add dl, 30h
-        mov ah, 02h
-        int 21h
+        displayCharacter ah
         popa
     endm DisplayNumber
 
 
-    ReadString macro Stringo ;Stringo dw MaxSize,  Actual Size,  BufferData(initialize $)
+    ReadString macro Stringo                                        ;Stringo dw MaxSize,  Actual Size,  BufferData(initialize $)
         mov ah, 0Ah
         mov dx, offset Stringo
         int 21h
@@ -61,11 +44,11 @@
 
     setTextCursor macro Column, Row
         pusha
-        mov  dl,  Column    
-        mov  dh,  Row    
-        mov  bh,  0     ;page no.
-        mov  ah,  2     
-        int  10h       
+            mov  dl,  Column    
+            mov  dh,  Row    
+            mov  bh,  0                                              ;page no.
+            mov  ah,  2     
+            int  10h       
         popa
     endm setTextCursor
 
@@ -77,16 +60,16 @@
         int 10h
     endm videoMode
 
-    drawHealthBar macro x,  y,  color,  height,  width ;x,  y are the starting position (top left corner) 
+    drawHealthBar macro x,  y,  color,  height,  width              ;x,  y are the starting position (top left corner) 
        local whilePlatformBeingDrawn
         pusha
         mov cx, x                        
         mov dx, y                                
         whilePlatformBeingDrawn:
             drawPixel_implicit color
-            inc cx ;the x-coordinate
-            checkDifference cx,  x,  width ;Keep adding Pixels till Cx-P_x=widthPlatform
-         JNG whilePlatformBeingDrawn 
+            inc cx                                                  ;the x-coordinate
+            checkDifference cx,  x,  width                          ;Keep adding Pixels till Cx-P_x=widthPlatform (the first row is drawn)
+         JNG whilePlatformBeingDrawn                                ;Once the first row is done start with the second row.
             mov cx,  x
             inc dx
             checkDifference dx,  y,  height
@@ -104,22 +87,21 @@
         int 10h
     endm drawPixel
         
-    drawDynamicPixel macro column,  row,  color,  Y_t,  X_t     ;x,  y,  color...the last two parameters are the dynamic position of the pixel
-    ;Assumes that mov ah,  0ch was priorly done.
-            xor ch, ch ;Because all of our images are db arrays.
+    drawDynamicPixel macro column,  row,  color,  Y_t,  X_t                 ;x,  y,  color...the last two parameters are the dynamic position of the pixel. Assumes that mov ah,  0ch was priorly done.
+            xor ch, ch                                                      ;Because all of our images are db arrays.                                                                             
             xor dh, dh
             mov dl,  row
             mov cl,  column
             mov al,  color
             ;Dynamics:
-            add dx,  Y_t ;X_t and Y_t correspond to the time changing position.
+            add dx,  Y_t                                                    ;X_t and Y_t correspond to the time changing position.
             add cx,  X_t
             int 10h
     endm drawDynamicPixel
 
-    drawPixel_implicit macro color ;Assumes that spatial (cx,  dx) parameters are already initialized.
+    drawPixel_implicit macro color                                          ;Assumes that spatial (cx,  dx) parameters are already initialized.
         mov ah, 0ch
-        mov bh, 00h ;Page no.
+        mov bh, 00h                                                         ;Page no.
         mov al, color
         int 10h
     endm drawPixel_implicit
@@ -129,60 +111,58 @@
     endm return
 
 
-    getkeyboardStatus macro ;	zf = 0 if a key pressed,  ax = 0 if no scan code is available otherwise ax=[ScanCode][ASCII],  does not interrupt the program.
+    getkeyboardStatus macro                                                 ;zf = 0 if a key pressed,  ax = 0 if no scan code is available otherwise ax=[ScanCode][ASCII],  does not interrupt the program.
         push ax 
             mov ah, 1
             int 16h
         pop ax
     endm getKeyboardStatus
 
-    readKey macro ;halts program until a key is present in the keyboard buffer to consume,  reads the scan code on Ah and the ASCII on AL.
-        ;push ax
+    readKey macro                                                           ;halts program until a key is present in the keyboard buffer to consume,  reads the scan code on Ah and the ASCII on AL.
         mov ah, 0
         int 16h
-        ;pop ax
     endm readKey
 
-    checkMousePointer macro ;cx,  dx has the position,  bx is 1 in case of a click. 
+    checkMousePointer macro                                                 ;cx,  dx has the position,  bx is 1 in case of a click. 
         mov ax, 3
         int 33h
     endm checkMousePointer
 
 
-    blankScreen macro color,  from,  to ;from,  to indicates the range on x-axis
-        mov ah, 06 ;Scroll (Zero lines anyway)
-        mov al, 00h ;to blank the screen
-        mov bh, color  ;color to blank the screen with
-        mov ch,  0h ;0 to 24 (text mode is 80x25)
+    blankScreen macro color,  from,  to                                     ;from,  to indicates the range on x-axis
+        mov ah, 06                                                          ;Scroll (Zero lines anyway)
+        mov al, 00h                                                         ;to blank the screen
+        mov bh, color                                                       ;color to blank the screen with
+        mov ch,  0h                                                         ;0 to 24 (text mode is 80x25)
         mov cl, from 
         mov dh,  24
         mov dl, to
-    ;to the end of the screen
+                                                                            ;to the end of the screen
         int 10h
     endm blankScreen 
 
-    notificationBar macro color,  from,  to ;from,  to indicates the range on y-axis,  this uses the scroll interrupt as the previous macro
-        mov ah, 06     ;Scroll (Zero lines anyway)
-        mov al, 0h    ;to blank the screen
-        mov bh, color  ;color to blank the screen with
-        mov ch, from ;Takes the who
+    notificationBar macro color,  from,  to                                 ;from,  to indicates the range on y-axis,  this uses the scroll interrupt as the previous macro
+        mov ah, 06                                                          ;Scroll (Zero lines anyway)
+        mov al, 0h                                                          ;to blank the screen
+        mov bh, color                                                       ;color to blank the screen with
+        mov ch, from                                                        ;Takes the who
         mov cl, 0h
         mov dh, to
-        mov dl, 79 ;(text mode is 80x25)
+        mov dl, 79                                                          ;(text mode is 80x25)
         int 10h
     endm notificationBar
 
     resetMouse macro
-        mov  ax,  0000h  ; reset mouse
+        mov  ax,  0000h                                                     ;reset mouse
         int  33h       
     endm resetMouse
     
     showMouse macro
-        mov  ax,  0001h  ; show mouse
+        mov  ax,  0001h                                                     ;show mouse
         int  33h
     endm resetMouse
 
-    checkDifference macro A, B, C ;checks if A-B=C and yields 0 if that's true
+    checkDifference macro A, B, C                                           ;checks if A-B=C and yields 0 if that's true
     push ax
                 mov ax, A
                 sub ax, B
@@ -191,27 +171,26 @@
     endm checkDifference
         
     getSystemTime macro
-         mov ah, 2ch
-        int 21h ;gets the current time
+        mov ah, 2ch
+        int 21h                                                             ;gets the current time.
     endm getSystemTime
 
-    checkTimePassed macro previous_time ;CH = hour CL = minute DH = second DL = 1/100 seconds
+    checkTimePassed macro previous_time                                     ;CH = hour CL = minute DH = second DL = 1/100 seconds
         getSystemTime
-        cmp dl, previous_time ;checks if a centisecond has passed and returns zero in that case
+        cmp dl, previous_time                                               ;checks if a centisecond has passed and returns zero in that case
     endm checkTimePassed
 
-    shieldControlFirst macro P_y,  upKey,  downKey ;Takes the dimension that we would like to control,  and the two keys using for controling that dimension
+    shieldControlFirst macro P_y,  upKey,  downKey                          ;Takes the dimension that we would like to control,  and the two keys using for controling that dimension
         local Read,  movesUp,  movesDown,  resetPositionHigh,  resetPositionLow,  None
-        ;So for vertical motion of the left shield pass Pl_y and vice versa.
-        ;Check if any key is pressed,  if yes then check if it's w,  W or s,  S for the former move up and for the latter move down,  check collisions with upper and lower boundaries for each.
+        ;Check if any key is pressed,  if yes then check if it's the specified  upkay/down key for the former move up and for the latter move down,  check collisions with upper and lower boundaries for each.
         getKeyboardStatus
-        JZ None ;No key was pressed,  see if any neccessary action is needed.
-            readKey ;else key was pressed
-            cmp Ah, upKey ;Left
+        JZ None                                                             ;No key was pressed,  see if any neccessary action is needed.
+            readKey                                                         ;else key was pressed
+            cmp Ah, upKey                                                   ;Left
             JE movesUp
-            cmp Ah, downKey ;Right
+            cmp Ah, downKey                                                 ;Right
             JE movesDown
-            JMP None ;Do nothing if any other key was pressed.
+            JMP None                                                        ;Do nothing if any other key was pressed.
 
 
         movesUp:
@@ -231,14 +210,14 @@
             JMP None
 
         resetPositionHigh:
-        ;Attempt to surpass y=0: reset position to y=0
+            ;Attempt to surpass y=0: reset position to y=0
             mov ax, 0
             mov P_y, ax
             JMP None
 
         resetPositionLow:
-        ;Attempt to surpass y=200 (the bottom pixel): reset position to y=200 
-            mov ax, 150 ;WindowHeight-ShieldHeight (Since we're dealing with the top left pixel of the shield)
+            ;Attempt to surpass y=200 (the bottom pixel): reset position to y=200 
+            mov ax, 150                                                     ;WindowHeight-ShieldHeight (Since we're dealing with the top left pixel of the shield)
             mov P_y, ax
             JMP None
 
@@ -247,24 +226,20 @@
     endm shieldControlFirst 
 
 
-    shieldControlSecond macro P_y,  upKey,  downKey ;Takes the dimension that we would like to control,  and the two keys using for controling that dimension
+    shieldControlSecond macro P_y,  upKey,  downKey                         ;Replicates the function above but for the left shield
         local Reads,  movesUps,  movesDowns,  resetPositionHighs,  resetPositionLows,  Nones
-        ;So for vertical motion of the left shield pass Pl_y and vice versa.
-        ;Check if any key is pressed,  if yes then check if it's w,  W or s,  S for the former move up and for the latter move down,  check collisions with upper and lower boundaries for each.
-        ;getKeyboardStatus
-        JZ Nones ;No key was pressed,  see if any neccessary action is needed.
-            ;readKey ;else key was pressed
-            cmp Ah, upKey ;Left
+
+        JZ Nones 
+            cmp Ah, upKey
             JE movesUps
-            cmp Ah, downKey ;Right
+            cmp Ah, downKey 
             JE movesDowns
-            JMP Nones ;Do nothing if any other key was pressed.
+            JMP Nones 
 
 
         movesUps:
             mov ax, P_Velocity_L
             sub P_y,  ax
-            ;Check collisions with y=0
             cmp P_y, 0
             Jl resetPositionHighs
             JMP Nones
@@ -272,20 +247,17 @@
         movesDowns:
             mov ax, P_velocity_L
             add P_y,  ax
-            ;Check collisions with y=windowHeight-shieldHight
             cmp P_y, 150
             JG resetPositionLows
             JMP Nones
 
         resetPositionHighs:
-        ;Attempt to surpass y=0: reset position to y=0
             mov ax, 0
             mov P_y, ax
             JMP Nones
 
         resetPositionLows:
-        ;Attempt to surpass y=200 (the bottom pixel): reset position to y=200 
-            mov ax, 150 ;WindowHeight-ShieldHeight (Since we're dealing with the top left pixel of the shield)
+            mov ax, 150 
             mov P_y, ax
             JMP Nones
 
@@ -293,43 +265,36 @@
         
     endm shieldControlSecond
 
-    checkMouseRegion macro from_x, to_x, from_y, to_y
+    checkMouseRegion macro from_x, to_x, from_y, to_y                       ;Given a rectange, this tells you whether the mouse is on it or not using its cx, dx coordinates.
         local itsOver
-        cmp cx, from_x
-        jb itsOver
-        cmp cx, to_x
-        ja itsOver
-        cmp dx, from_y
-        jb itsOver
-        cmp dx, to_y
-        ja itsOver
-        xor ax, ax
+            cmp cx, from_x
+            jb itsOver
+            cmp cx, to_x
+            ja itsOver
+            cmp dx, from_y
+            jb itsOver
+            cmp dx, to_y
+            ja itsOver
+            xor ax, ax
         itsOver:
     endm checkMouseRegion
 
-    resetPosition macro So_x, So_y ;Positions to which we would like to reset the ball
-        ;Resetting x-position
-        mov ax,  So_x
-        mov S_x, ax
-        ;Reseting y-position
-        mov ax,  So_y
-        mov S_y, ax
-    endm resetPosition 
+
 
 
     Logo macro y,  x 
-    local whileLogo
+    local whileLogo                                                        ;Loops on the logo and draws it pixel by pixel
         mov ah, 0ch
         mov bx,  offset logoFront
     whileLogo:
        drawDynamicPixel [bx], [bx+1], [bx+2],  y,  x
        add bx, 3
-       cmp bx, offset logoFrontSize
+       cmp bx, offset logoFrontSize                                       ;Time to end the loop whenever the offset is outside the image.
     JNE whileLogo
     endm Logo
     
 
-    staticShipLeft macro y,  x 
+    staticShipLeft macro y,  x                                            ;Loops on the left ship and draws it
         local whileShipBeingDrawn
         mov ah, 0ch
         mov bx,  offset shipLeft
@@ -340,7 +305,7 @@
         JNE whileShipBeingDrawn
     endm staticShipLeft
        
-    staticShipRight macro y,  x 
+    staticShipRight macro y,  x                                          ;Loops on the right ship and draws it
         local whileShipisBeingDrawn
         mov ah, 0ch
         mov bx,  offset shipRight
@@ -352,33 +317,31 @@
     endm staticShipRight
     
     getCurrentMinute macro
-     mov ah, 2ch
-     int 21h ;gets the current time
-     mov minutes, cl
+        mov ah, 2ch
+        int 21h                                                         ;gets the current time
+        mov minutes, cl
     endm getCurrentMinute
 
-    dynamicBalls macro
+    dynamicBalls macro                                                  ;Loops on each ball, draws it and then moves it.
             mov bx, 0h
-            ballDynamics:
+            ballDynamics:       
                 mov currentBallIndex, bx
                 call moveBall
                 call checkDestroyedCount
                 call drawBall
-                add bx, 2  ; counter
-                cmp bx, ballCount  ;size of array              
+                add bx, 2                                               ;counter
+                cmp bx, ballCount                                       ;size of array              
             jl ballDynamics
     endm dynamicBalls
 
     Waves macro
-    mov bx, waveCount
-        ;Drawing and movign the waves.
+    mov bx, 0
         waveInAction:
-            call dynamicWave  
-            moveWaves
-            sub bx,2
+            call dynamicWave                                            ;Draws the wave
+            moveWaves                                                   ;Moves the wave
+            add bx,2
+            cmp bx, waveCount
         jnz waveInAction
-            call dynamicWave  
-            moveWaves
     endm Waves
 
     moveWaves macro
@@ -394,15 +357,12 @@
         ;if the wave is on the right shield border, then reflect it
 		mov ax, Pr_x               
 		SUB ax, waveWidth
-		;SUB ax, screenMarginx
 		CMP [bx+W_x], ax	         
 		JG Reflect
 
         jmp AuRevior
         Reflect:
             Neg Wv_x+bx
-            ;mov ax, positionThreshold
-            ;add W_x+bx, ax
         Aurevior:
         call checkRightShieldImpact
         call checkLeftShieldImpact
@@ -419,13 +379,12 @@ levelSelection macro
     print levelTwoMessage
     resetMouse
     showMouse
-    getUserChoice:                      ;get the player's decision
+    getUserChoice:                              ;get the player's choice of levels
         checkMousePointer
         cmp bx, 1
         jne checkOnceAgain
-        shr cx, 1
-        ;Checking if mouse click was on exit game.
-        checkMouseRegion  45, 305, 80, 90
+        shr cx, 1                                ;To accomodate to the 640x200 used by the mouse interrupt
+        checkMouseRegion  45, 305, 80, 90        ;Checking if mouse click was on the first level
         cmp ax, 0
         Jne checkLevelTwo
         JMP LevelOne
@@ -436,11 +395,11 @@ levelSelection macro
         JMP LevelTwo
     checkOnceAgain:
         getkeyboardStatus
-        JZ getUserChoice ;No key was pressed
+        JZ getUserChoice                            ;No key was pressed
         readKey
-        cmp ah, 02                       ;scancode for F1
+        cmp ah, 02                                  ;scancode for 1
         JZ far ptr  LevelOne
-        cmp ah, 03                       ;scanecode for F2
+        cmp ah, 03                                  ;scanecode for 2
         JZ far ptr LevelTwo
         jmp getUserChoice
         ret
@@ -477,66 +436,56 @@ levelSelection macro
 .MODEL HUGE
 .STACK 64   
 .DATA
-    ;Data variables relating to the ball
-    screenMarginx DW 32       ;variable used to check collisions early
-	screenMarginy DW 6        ;variable used to check collisions early
-    destroyedCount DW 0       ;The double count 
-    positionThreshold dw 7h   ;Used to free the ball from sticky collisions
-    S_x dw 70, 240, 70, 240, 70, 240      ;x position of the ball
-    S_y dw 50, 150, 150, 50, 50, 150      ;y position of the ball
-    V_x dw 7H, 0fff9H, 7h, 0fff9h, 7h, 0fff9h         ;Horizontal Velocity
-    V_y dw 0H, 0H, 0h, 0h, 0h, 0h        ;Vertical Velocity
-    ;Refresher Quantities
-    Sx dw 70, 240, 70, 240, 70, 240      ;x position of the ball
-    Sy dw 160, 40, 40, 160, 150, 50         ;y position of the ball
-    Vx dw 7H, 0fff9H, 7h, 0fff9h, 7h, 0fff9h         ;Horizontal Velocity
-    Vy dw 0H, 0H, 0h, 0h, 0h, 0h        ;Vertical Velocity
+    ;Miscellaneous data variables
+        screenMarginx DW 32                                         ;variable used to check collisions early
+        screenMarginy DW 6                                          ;variable used to check collisions early
+        destroyedCount DW 0                                         ;The double count 
+        positionThreshold dw 7h                                     ;Used to free the ball from sticky collisions
+
+    ;Ball Dynamics
+        S_x dw 70, 240, 70, 240, 70, 240                            ;x position of the ball
+        S_y dw 50, 150, 150, 50, 50, 150                            ;y position of the ball
+        V_x dw 7H, 0fff9H, 7h, 0fff9h, 7h, 0fff9h                   ;Horizontal Velocity
+        V_y dw 0H, 0H, 0h, 0h, 0h, 0h                               ;Vertical Velocity
+        ;To keep track of multiple different balls
+        colorBall db 0h
+        currentBallIndex dw ? 
+        ballCount dw 4h
+        destroyedBallsCountHealth db 255
+        ;Refresher Quantities (when any of the above is reset)
+        Sx dw 70, 240, 70, 240, 70, 240                             ;x position of the ball
+        Sy dw 160, 40, 40, 160, 150, 50                             ;y position of the ball
+        Vx dw 7H, 0fff9H, 7h, 0fff9h, 7h, 0fff9h                    ;Horizontal Velocity
+        Vy dw 0H, 0H, 0h, 0h, 0h, 0h                                ;Vertical Velocity
+
     ;LevelOne Temporary Variables:
-    positionLowerBound dw 5
-    Ve_x dw 5H, 0fffcH, 5h, 0fffch, 5h, 0fffch
-    ;Dynamic Balls
-    currentBallIndex dw ? 
-    ballCount dw 4h
-    ;Miscellaneous
-    colorBall db 0h
-    Centiseconds db 0;To check if a centisecond has passed.
+        positionLowerBound dw 5
+        Ve_x dw 5H, 0fffcH, 5h, 0fffch, 5h, 0fffch
+
     ;Data variables relating to the Shield (Pl (Left),  Pr(Right)):
-    colorShieldLeft db 41
-    colorShieldRight db  41
-    Pl_x dw 40
-    Pl_y dw 50
-    Pr_x dw 250
-    Pr_y dw 50
-    P_Velocity_L dw 18 ;Velocities of the left and right shields respectively
-    P_Velocity_R dw 18
-    Msg db 20 dup(10, 13), 09h, "Please Enter Your Name:", 2 dup(10, 13), 09h, '$'
-    UserName db 30, ?,  30 dup('$')
-    playerName2 db "Radwa", '$'
-    sendChatMSG db 11 dup(10, 13), "you sent a chat invitation to ", '$'
-    sendGameMSG db 11 dup(10, 13), "you sent a game invitation to ", '$'
-    requestKeyMSG db 2 dup(10, 13), 09h, "PLease Enter Any Key To continue", '$'
-    MSGFrist db 2 dup(10, 13), 09h, "PLease Try Again with Letter in Frist,  Press any Key To continue", '$'
-    MSGLong db 2 dup(10, 13), 09h, "PLease Try Again with shoter name,  Press any Key To continue", '$'
-    MSGshort db 2 dup(10, 13), 09h, "PLease Try Again with your name,  Press any Key To continue", '$'
-    MSGSpecial db 2 dup(10, 13), 09h, "PLease Try Again Don't use Spcial char,  Press any Key To continue", '$'
-    Msg3 db 7 dup(10, 13), 09h, "*To start chatting press F1", 2 dup(10, 13), 09h, "*To start game press F2", 2 dup(10, 13), 09h, "*To end the program press ESC", '$'
-    levelOneMessage db "Level I - Calm Day", '$'
-    levelTwoMessage db "Level II - Sea Storm", '$'
-    scoreLeft DB 100
-    scoreRight DB 100
-    destroyedBallsCountHealth db 255
-    minutes Db 0
-    Loses db ' lost:( ', '$'   
-    Wins db ' has earned victory ^_^', '$'
-    quitGame db 'Press any key to go the main menu', '$'
+        colorShieldLeft db 41
+        colorShieldRight db  41
+        Pl_x dw 40
+        Pl_y dw 50
+        Pr_x dw 250
+        Pr_y dw 50
+        P_Velocity_L dw 18                                           ;Velocities of the left and right shields respectively
+        P_Velocity_R dw 18
+
+    ;Relating to score
+        scoreLeft DB 100
+        scoreRight DB 100
+    ;Relating to time
+        minutes Db 0                                                  ;To check if a minute has passed
+        Centiseconds db 0                                             ;To check if a centisecond has passed.
+
     ;Data Variables related to waves:
-    ;Position parameters
-    W_x dw 80, 160, 100, 160, 100, 90, 170
-    W_y dw 0, 25, 50, 75, 100, 125, 150
-    waveCount dw 12
-    ;Velocity parameters
-    Wv_x dw 1, 0ffffh, 1, 0ffffh, 1, 0ffffh, 1
-    Wv_y dw 0, 0, 0, 0, 0, 0, 0
+        W_x dw 80, 160, 100, 160, 100, 90, 170
+        W_y dw 0, 25, 50, 75, 100, 125, 150
+        waveCount dw 14
+        ;Velocity parameters
+        Wv_x dw 1, 0ffffh, 1, 0ffffh, 1, 0ffffh, 1
+        Wv_y dw 0, 0, 0, 0, 0, 0, 0
 ;Graphics:
     ball db 6, 0, 17, 7, 0, 17, 8, 0, 17, 9, 0, 17, 10, 0, 17, 11, 0, 17, 12, 0, 17, 13, 0, 17
         db 4, 1, 17, 5, 1, 17, 6, 1, 17, 7, 1, 17, 8, 1, 17, 9, 1, 17, 10, 1, 17, 11, 1, 17, 12, 1, 17, 13, 1, 17, 14, 1, 17, 15, 1, 17
@@ -1462,22 +1411,40 @@ levelSelection macro
     db 239, 101, 63, 240, 101, 63, 241, 101, 63, 242, 101, 63, 243, 101, 88
     logoFrontSize dw 105 
 
+;Messages
+    Msg db 20 dup(10, 13), 09h, "Please Enter Your Name:", 2 dup(10, 13), 09h, '$'
+    UserName db 30, ?,  30 dup('$')
+    playerName2 db "Radwa", '$'
+    sendChatMSG db 11 dup(10, 13), "you sent a chat invitation to ", '$'
+    sendGameMSG db 11 dup(10, 13), "you sent a game invitation to ", '$'
+    requestKeyMSG db 2 dup(10, 13), 09h, "PLease Enter Any Key To continue", '$'
+    MSGFrist db 2 dup(10, 13), 09h, "PLease Try Again with Letter in Frist,  Press any Key To continue", '$'
+    MSGLong db 2 dup(10, 13), 09h, "PLease Try Again with shoter name,  Press any Key To continue", '$'
+    MSGshort db 2 dup(10, 13), 09h, "PLease Try Again with your name,  Press any Key To continue", '$'
+    MSGSpecial db 2 dup(10, 13), 09h, "PLease Try Again Don't use Spcial char,  Press any Key To continue", '$'
+    Msg3 db 7 dup(10, 13), 09h, "*To start chatting press F1", 2 dup(10, 13), 09h, "*To start game press F2", 2 dup(10, 13), 09h, "*To end the program press ESC", '$'
+    levelOneMessage db "Level I - Calm Day", '$'
+    levelTwoMessage db "Level II - Sea Storm", '$'
+    Loses db ' lost:( ', '$'   
+    Wins db ' has earned victory ^_^', '$'
+    quitGame db 'Press any key to go the main menu', '$'
+
 
 
 .Code
     MAIN PROC FAR 
     mov ax, @Data
     mov DS, ax
-    TheBeginning:
-        videoMode 13h                 ;https://stanislavs.org/helppc/int_10.html click on set video modes for all modes
+    TheBeginning:                               ;The screen at the very start of the game.
+        videoMode 13h                           ;https://stanislavs.org/helppc/int_10.html click on set video modes for all modes
         blankScreen 0h, 0, 4fh
         Print MSG
         blankScreen 0h, 0, 0
         Logo 30, 30
         call inputValidation
-        Print requestKeyMSG                      ;show message of continue 
+        Print requestKeyMSG                     ;show message of continue 
         blankScreen 0h, 0, 0 
-        readKey                         ;get any key to continue
+        readKey                                 ;get any key to continue
         videoMode 13h 
         Logo 30, 30
         Start:
@@ -1485,7 +1452,7 @@ levelSelection macro
         Print MSG3
         blankScreen 0h, 0, 7
         notificationBar 07, 15h, 18h          ;draw notification bar
-        call menuNavigation
+        call menuNavigation                   ;The main menu
  videoMode 03h ;Text mode.
 return
 MAIN ENDP 
@@ -1499,30 +1466,30 @@ MAIN ENDP
         timeToSwap Ve_x,V_x, 12
         timeToCopy V_x, Vx, 12
         timeToSwap positionThreshold, PositionLowerBound, 2
-    LevelTwo:
+    LevelTwo:                                               ;Default is level two, for level one we do necessary swapping first
    videoMode 13h
    initialtime:
-    getCurrentMinute ;Will be used to periodically shoot cannons, current minute is put in cl
+    getCurrentMinute                                        ;Will be used to periodically shoot cannons, current minute is put in cl
     blankScreen 104, 0, 4fh
-    whileTime:                        ;while centisecond hasn't passed yet
+    whileTime:                                              ;while centisecond hasn't passed yet
         staticShipLeft 10, 320
         staticShipRight 10, 286 
         checkTimePassed Centiseconds
-    JE whileTime                                   ;if a centisecond passes (won't be triggered for any less time)
-        setTextCursor 10, 2                       ;Set Cursor for position of leftscore
+    JE whileTime                                             ;if a centisecond passes (won't be triggered for any less time)
+        setTextCursor 10, 2                                  ;Set Cursor for position of leftscore
         ;displayNumber Minutes
-        mov Centiseconds, dl                     ;centisecond(s) has passed update the time variable with the new time.
+        mov Centiseconds, dl                                ;centisecond(s) has passed update the time variable with the new time.
         call generateBallsWithTime
-        blankScreen 104, 4, 35                   ;Color,  from,  to (on the x-axis)
-        Waves                                   ;repeated calls to static waves
-        dynamicBalls                            ;Responsible for drawing and maintaining ball movement
-        shieldControlFirst Pr_y, 4Dh, 4Bh       ;control Pr_y up and down with right and left arrows.
-        shieldControlSecond Pl_y, 1Eh,1Fh       ;33h,34h        ;control Pl_y up and down with a, s ;< >
-        call drawShieldLeft                     ;Draw left shield
-        call drawShieldRight                    ;Draw right shield
+        blankScreen 104, 4, 35                              ;Color,  from,  to (on the x-axis)
+        Waves                                               ;repeated calls to static waves
+        dynamicBalls                                        ;Responsible for drawing and maintaining ball movement
+        shieldControlFirst Pr_y, 4Dh, 4Bh                   ;control Pr_y up and down with right and left arrows.
+        shieldControlSecond Pl_y, 1Eh,1Fh                   ;33h,34h        ;control Pl_y up and down with a, s ;< >
+        call drawShieldLeft                                 ;Draw left shield
+        call drawShieldRight                                ;Draw right shield
         call showHealth
-        call scoreControl
-        call gameOverScreen
+        call scoreControl                                   ;Control the score
+        call gameOverScreen                                 
     videoMode 03h ;Text mode. 
     return
    GameProc ENDP 
@@ -1532,35 +1499,35 @@ menuNavigation proc near
         resetMouse
         showMouse
         getDecision:                      ;get the player's decision
-        checkMousePointer
-        cmp bx, 1
-        jne checkOnceMore
-        shr cx, 1 ;The shift right here is so that we divide whatever cx we get from the mouse interrupt by two since it works with 640x200 instead of 320x200
-        ;Checking if mouse click was on exit game.
-        checkMouseRegion  65, 305, 85, 95
-        cmp ax, 0
-        Jne checkGame
-        JMP ExitGame
-        checkGame:
-        checkMouseRegion 65, 305, 70, 80
-        cmp ax, 0
-        Jne checkChat
-        JMP theGame
-        checkChat:
-        checkMouseRegion 65, 305, 55, 65
-        cmp ax, 0
-        Jne checkOnceMore
-        jmp Chat
+            checkMousePointer
+            cmp bx, 1
+            jne checkOnceMore
+            shr cx, 1                        ;The shift right here is so that we divide whatever cx we get from the mouse interrupt by two since it works with 640x200 instead of 320x200
+            ;Checking if mouse click was on exit game, then checking for chat then the game it self
+            checkMouseRegion  65, 305, 85, 95
+            cmp ax, 0
+            Jne checkGame
+            JMP ExitGame
+            checkGame:
+            checkMouseRegion 65, 305, 70, 80
+            cmp ax, 0
+            Jne checkChat
+            JMP theGame
+            checkChat:
+            checkMouseRegion 65, 305, 55, 65
+            cmp ax, 0
+            Jne checkOnceMore
+            jmp Chat
     checkOnceMore:
-        getkeyboardStatus
-        JZ getDecision ;No key was pressed
-        readKey
-        cmp ah, 3Bh                       ;scancode for F1
-        JZ  Chat
-        cmp ah, 3Ch                       ;scanecode for F2
-        JZ TheGame
-        cmp al, 1Bh                       ;asscii code for ESC
-        Jz ExitGame
+            getkeyboardStatus
+            JZ getDecision ;No key was pressed
+            readKey
+            cmp ah, 3Bh                       ;scancode for F1
+            JZ  Chat
+            cmp ah, 3Ch                       ;scanecode for F2
+            JZ TheGame
+            cmp al, 1Bh                       ;asscii code for ESC
+            Jz ExitGame
         jmp getDecision
     TheGame:                        ;start the game
         Print sendGameMSG
@@ -1577,18 +1544,19 @@ menuNavigation proc near
     menuNavigation endp
 
 
- GenerateBallsWithtime PROC near
- ; try to compare with big time to generate slowly
+ GenerateBallsWithtime PROC near                ;Need comments
+    ;try to compare with big time to generate slowly
     getSystemTime
-        cmp minutes, cl ;cl has the current minute
+        cmp minutes, cl                        ;cl has the current minute
         je break
-     mov minutes, CL
-     mov ax, 8h
-     cmp ballCount, ax
+        mov minutes, CL
+        mov ax, 8h
+        cmp ballCount, ax
      jl changeballcount
      mov ax, 0Ch
      mov ballCount, ax
-     jmp break
+     jmp break  
+
      changeballcount: 
         mov ax, 8h
         mov ballCount, ax
@@ -1598,7 +1566,7 @@ menuNavigation proc near
     
   GenerateBallsWithtime ENDP 
 
-   
+   ;The four  following procedures draw images by looping through an array with the image's spatial and position parameters.
    drawBall proc near
     mov ah, 0ch
     mov bx, currentBallIndex
@@ -1613,36 +1581,40 @@ menuNavigation proc near
     donotDraw:
     ret
    drawBall endp
-   
-   showHealth proc near
-        push bx
-        mov bl,  ScoreLeft
-        mov bh, 0
-        cmp bx, 50
-        JL drawRed                                  ;in case less than 50, draw make the hp bar red.
-        drawHealthBar  40,  1,  49,  1,  bx         ;Takes x, y, color, height, width
-        jmp checkTheOtherPlayer
-        drawRed:
-            drawHealthBar  40,  1,  41,  1,  bx
-            ;mov colorshieldleft, 41                 ;change the shield color for the winning player.
-            ;mov colorShieldRight, 0eh
-        checkTheOtherPlayer:                                  ;Otherwise do the same check for the other health bar, note that bx has the actual score and bp has the starting position
-            mov bl,  ScoreRight
-            mov bh, 0
-            mov bp, 280
-            sub bp, bx
-            cmp bx, 50
-        jl drawReds
-            drawHealthBar  bp,  1,  49,  1,  bx
-        jmp endit
-        drawReds:
-            ;mov colorshieldleft, 0eh
-            ;mov colorShieldRight, 41
-            drawHealthBar  bp,  1,  41,  1,  bx
-        endit:
-            pop bx
-        ret
-    showhealth endp
+
+    drawShieldLeft proc near
+     mov ah, 0ch
+     mov bx,  offset shield
+     whileBeingDrawn:
+       drawDynamicPixel [bx], [bx+1], colorShieldLeft,  Pl_y,  Pl_x
+       add bx, 3
+       cmp bx, offset P_height
+     JNE whileBeingDrawn
+   ret
+drawShieldLeft endp
+
+   drawShieldRight proc near
+    mov ah, 0ch
+    mov bx,  offset rightShield
+    whileRightShieldBeingDrawn:
+       drawDynamicPixel [bx], [bx+1], colorShieldRight,  Pr_y,  Pr_x
+       add bx, 3
+       cmp bx, offset rightShieldSize
+    JNE whileRightShieldBeingDrawn
+   ret
+   drawShieldRight endp
+
+   dynamicWave proc near  
+        mov ah, 0ch
+        ;mov bx, currentWaveIndex
+        mov SI,  offset wave
+    whileWavesBeingDrawn:
+       drawDynamicPixel [SI], [SI+1], [SI+2],  W_y+bx,  W_x+bx
+       add SI, 3
+       cmp SI, offset waveWidth
+    JNE whileWavesBeingDrawn
+    ret
+     dynamicWave endp
 
 checkDestroyedCount proc near
     mov ah, 2Ch               ;get Time
@@ -1689,41 +1661,7 @@ checkDestroyedCount proc near
 checkDestroyedCount endp
 ;Algorithm: 
 
-drawShieldLeft proc near
-     mov ah, 0ch
-     mov bx,  offset shield
-     whileBeingDrawn:
-       drawDynamicPixel [bx], [bx+1], colorShieldLeft,  Pl_y,  Pl_x
-       add bx, 3
-       cmp bx, offset P_height
-     JNE whileBeingDrawn
-   ret
-drawShieldLeft endp
 
-   drawShieldRight proc near
-    mov ah, 0ch
-    mov bx,  offset rightShield
-    whileRightShieldBeingDrawn:
-       drawDynamicPixel [bx], [bx+1], colorShieldRight,  Pr_y,  Pr_x
-       add bx, 3
-       cmp bx, offset rightShieldSize
-    JNE whileRightShieldBeingDrawn
-   ret
-   drawShieldRight endp
-
-
-
-   dynamicWave proc near  
-        mov ah, 0ch
-        ;mov bx, currentWaveIndex
-        mov SI,  offset wave
-    whileWavesBeingDrawn:
-       drawDynamicPixel [SI], [SI+1], [SI+2],  W_y+bx,  W_x+bx
-       add SI, 3
-       cmp SI, offset waveWidth
-    JNE whileWavesBeingDrawn
-    ret
-     dynamicWave endp
 
  ;Procedures relating to motion and collisions
     inputValidation proc near
@@ -1793,9 +1731,9 @@ drawShieldLeft endp
     inputValidation endp
 
   checkRightShipCollisions proc near
-  ;This basicaly implements if(ball.isWithin(rightScreenMargin, rightScreenMargin-Threshold))
+        ;This basicaly implements if(ball.isWithin(rightScreenMargin, rightScreenMargin-Threshold))
         cmp scoreRight, 0
-        JNG goOut ;Do nothing if he's already dead
+        JNG goOut                               ;Do nothing if he's already dead
 
         mov bx, currentBallIndex  
         mov ax,  320                          
@@ -1813,10 +1751,10 @@ drawShieldLeft endp
         cmp ax, [bx+S_x]
         JG goOut 
 
-        mov ah, 10 ;Take 10 down from the ships HP
+        mov ah, 10                              ;Take 10 down from the ships HP
         sub scoreRight, ah
         ret
-    goOut: ;Do nothing if none is satisfied
+    goOut:                                      ;Do nothing if none is satisfied
     ret
     checkRightShipCollisions endp
 
@@ -1824,7 +1762,7 @@ drawShieldLeft endp
     ;This basicaly implements if(ball.isWithin(leftScreenMargin, leftScreenMargin+Threshold))
 
         cmp scoreLeft, 0
-        JNG timeToLeave ;Do nothing if its already sunken
+        JNG timeToLeave                     ;Do nothing if its already sunken
 
         mov bx, currentBallIndex
         mov ax, screenMarginx
@@ -1838,9 +1776,9 @@ drawShieldLeft endp
         cmp  [bx+S_x], ax
         JG timeToLeave
         
-        mov al, 10 ;Take 10 down from the ships HP
+        mov al, 10                      ;Take 10 down from the ships HP
         sub scoreLeft, al
-    timeToLeave: ;Do nothing if none is satisfied
+    timeToLeave:                        ;Do nothing if none is satisfied
     ret
     checkLeftShipCollisions endp
 
@@ -1973,7 +1911,6 @@ checkLeftShieldImpact proc near ;deals with wave collisions
         cmp ax, Pl_y
         JNG bypass
         ;Reaching this point indicates that the conditions are satisified.
-        ;NEG Wv_x+bx
         mov ax, positionThreshold ;reflect the wave back with force
         add W_x+bx, ax
         ;now someone's score must go down
@@ -2060,7 +1997,7 @@ checkLeftShieldImpact proc near ;deals with wave collisions
 		mov ax, 320                 ;Horizontal resolution
 		SUB ax, ballSize
 		SUB ax, screenMarginx
-		CMP [bx+S_x], ax	          ;S_x > 320 - ballSize  - screenMargin indicates a collision
+		CMP [bx+S_x], ax	        ;S_x > 320 - ballSize  - screenMargin indicates a collision
 		JG Destroy
 		
 		
@@ -2080,7 +2017,7 @@ checkLeftShieldImpact proc near ;deals with wave collisions
 		jmp goodBye
 		
 		negateV_y:
-			NEG V_y+bx   ;BALL_VELOCITY_Y = - BALL_VELOCITY_Y
+			NEG V_y+bx              ;BALL_VELOCITY_Y = - BALL_VELOCITY_Y
 			JMP goodBye
 
         Destroy:
@@ -2114,6 +2051,36 @@ checkLeftShieldImpact proc near ;deals with wave collisions
         displayNumber scoreRight                 ;draw rightscore
     endp scoreControl
 
+      showHealth proc near
+        push bx
+        mov bl,  ScoreLeft
+        mov bh, 0
+        cmp bx, 50
+        JL drawRed                                  ;in case less than 50, draw make the hp bar red.
+        drawHealthBar  40,  1,  49,  1,  bx         ;Takes x, y, color, height, width
+        jmp checkTheOtherPlayer
+        drawRed:
+            drawHealthBar  40,  1,  41,  1,  bx
+            ;mov colorshieldleft, 41                 ;change the shield color for the winning player.
+            ;mov colorShieldRight, 0eh
+        checkTheOtherPlayer:                                  ;Otherwise do the same check for the other health bar, note that bx has the actual score and bp has the starting position
+            mov bl,  ScoreRight
+            mov bh, 0
+            mov bp, 280
+            sub bp, bx
+            cmp bx, 50
+        jl drawReds
+            drawHealthBar  bp,  1,  49,  1,  bx
+        jmp endit
+        drawReds:
+            ;mov colorshieldleft, 0eh
+            ;mov colorShieldRight, 41
+            drawHealthBar  bp,  1,  41,  1,  bx
+        endit:
+            pop bx
+        ret
+    showhealth endp
+
 gameOverScreen proc near
 
         cmp scoreRight, 0                         ;check if right lost the game
@@ -2134,7 +2101,7 @@ gameOverScreen proc near
         jz quitGameNow
 
         LeftPlayerLoses:
-            cmp scoreLeft, 0                         ;check if left lost the game
+            cmp scoreLeft, 0                       ;check if left lost the game
             JG Bridge
             blankScreen 104, 0, 4fh
             setTextCursor 4, 6
@@ -2161,10 +2128,10 @@ gameOverScreen proc near
     mov [currentballindex],bx
     mov destroyedCount,bx
     ;Reseting the game to the default (level two)
-    timeToSwap Wv_x, Wv_y, 14
-    timeToSwap V_x,Ve_x, 12
-    timeToCopy V_x, Vx, 12
-    timeToSwap positionThreshold, PositionLowerBound, 2
+        timeToSwap Wv_x, Wv_y, 14
+        timeToSwap V_x,Ve_x, 12
+        timeToCopy V_x, Vx, 12
+        timeToSwap positionThreshold, PositionLowerBound, 2
     videoMode 13h
     jmp near ptr Start
     ret

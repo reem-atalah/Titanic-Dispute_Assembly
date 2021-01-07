@@ -54,6 +54,22 @@
 
 
 
+
+checkPause macro
+    ;check if p was pressed
+    cmp ah, 19h
+    JNE tryLater
+    pLoop:
+        getKeyboardStatus
+        JZ pLoop                        ;No key was pressed
+        readkey                         ;key was pressed
+        cmp ah, 19h
+        jne pLoop                       ;if its not p then keep pausing
+    tryLater:
+
+endm checkPause
+
+
     videoMode macro Mode
         mov ah, 00h
         mov al, Mode
@@ -1482,13 +1498,14 @@ MAIN ENDP
         call generateBallsWithTime
         blankScreen 104, 4, 35                              ;Color,  from,  to (on the x-axis)
         Waves                                               ;repeated calls to static waves
-        dynamicBalls                                        ;Responsible for drawing and maintaining ball movement
-        shieldControlFirst Pr_y, 4Dh, 4Bh                   ;control Pr_y up and down with right and left arrows.
-        shieldControlSecond Pl_y, 1Eh,1Fh                   ;33h,34h        ;control Pl_y up and down with a, s ;< >
         call drawShieldLeft                                 ;Draw left shield
         call drawShieldRight                                ;Draw right shield
         call showHealth
         call scoreControl                                   ;Control the score
+        dynamicBalls                                        ;Responsible for drawing and maintaining ball movement
+        shieldControlFirst Pr_y, 4Dh, 4Bh                   ;control Pr_y up and down with right and left arrows.
+        shieldControlSecond Pl_y, 1Eh,1Fh                   ;33h,34h        ;control Pl_y up and down with a, s ;< >
+        checkPause
         call gameOverScreen                                 
     videoMode 03h ;Text mode. 
     return

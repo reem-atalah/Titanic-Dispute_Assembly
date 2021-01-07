@@ -1,4 +1,4 @@
-;Used Macros:
+;Used Macros:   
     Print macro Stringo                                             ;Takes a string and prints it
         mov AH, 09h
         mov dx, offset Stringo
@@ -55,19 +55,19 @@
 
 
 
-checkPause macro
-    ;check if p was pressed
-    cmp ah, 19h
-    JNE tryLater
-    pLoop:
-        getKeyboardStatus
-        JZ pLoop                        ;No key was pressed
-        readkey                         ;key was pressed
+    checkPause macro
+        ;check if p was pressed
         cmp ah, 19h
-        jne pLoop                       ;if its not p then keep pausing
-    tryLater:
+        JNE tryLater
+        pLoop:
+            getKeyboardStatus
+            JZ pLoop                        ;No key was pressed
+            readkey                         ;key was pressed
+            cmp ah, 19h
+            jne pLoop                       ;if its not p then keep pausing
+        tryLater:
 
-endm checkPause
+    endm checkPause
 
 
     videoMode macro Mode
@@ -385,8 +385,8 @@ endm checkPause
     ;ret
     endm Waves ;endp
     
-    
-levelSelection macro
+
+    levelSelection macro
    videoMode 13h
     blankScreen 0h, 0, 4fh
     setTextCursor 10, 10                       ;Set Cursor for level one message

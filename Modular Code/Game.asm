@@ -22,7 +22,8 @@
         extrn drawShieldLeft: far
         extrn drawShieldRight: far
         extrn dynamicWave: far
-        public V_x, colorBall, colorShieldLeft, colorShieldRight, S_y, S_x, Pl_y, Pr_x, Pl_x, Pr_y, currentBallindex, W_y, W_x
+        extrn MAINChAT:far
+        public V_x, colorBall, colorShieldLeft, colorShieldRight, S_y, S_x, Pl_y, Pr_x, Pl_x, Pr_y, currentBallindex, W_y, W_x,UserName,playerName2
 ;____________________________________________________________________________________________________________________
 ;Let the code beign.
 
@@ -212,6 +213,8 @@ menuNavigation proc near
         Print sendChatMSG
         Print playerName2
         readKey
+        Call MAINChAT
+        return
     ExitGame: 
     ret 
     menuNavigation endp

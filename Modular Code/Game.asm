@@ -1,5 +1,5 @@
 ;Dependencies
-    include TML.ink                 ;Includ the Titanic Macro Library
+    include TML.asm                 ;Includ the Titanic Macro Library
         extrn ball: byte    
         extrn ballSize: word 
         extrn shield: byte 
@@ -109,6 +109,8 @@
     mov ax, @Data
     mov DS, ax
     TheBeginning:                               ;The screen at the very start of the game.
+        setBaudRate 00h, 0ch
+        setProtocol 00011011b
         videoMode 13h                           ;https://stanislavs.org/helppc/int_10.html click on set video modes for all modes
         blankScreen 0h, 0, 4fh
         Print MSG
@@ -160,14 +162,33 @@ MAIN ENDP
         call showHealth
         call scoreControl                                   ;Control the score
         dynamicBalls                                        ;Responsible for drawing and maintaining ball movement
-        shieldControlFirst Pr_y, 4Dh, 4Bh                   ;control Pr_y up and down with right and left arrows.
-        shieldControlSecond Pl_y, 1Eh,1Fh                   ;33h,34h        ;control Pl_y up and down with a, s ;< >
-        checkPause
-        call gameOverScreen                                 
+       ;Controlling objects in the game.    
+        getKeyboardStatus
+        JZ noKeyPressed                                     ;No key was pressed, check if any
+            readKey
+            sendByte ah
+            call leftShieldControl                          
+            noKeyPressed:
+                receiveByte ah
+                cmp ah, 0ffh
+                je ItsAFK
+                call rightShieldControl
+                ItsAFK:
+                call gameOverScreen                                 
+            jmp whileTime
     videoMode 03h ;Text mode. 
     return
    GameProc ENDP 
 
+rightShieldControl proc near
+        shieldControlSecond Pl_y, 4Dh,4Bh                   ;33h,34h        ;control Pl_y up and down with a, s ;< >
+ret
+endp rightShieldControl
+
+leftShieldControl proc near
+        shieldControlFirst Pr_y, 4Dh, 4Bh                   ;control Pr_y up and down with right and left arrows.
+        ret
+endp leftShieldControl  
 ;description
 menuNavigation proc near
         resetMouse
@@ -187,7 +208,7 @@ menuNavigation proc near
             cmp ax, 0
             Jne checkChat
             JMP theGame
-            checkChat:
+            checkChat:   
             checkMouseRegion 65, 305, 55, 65
             cmp ax, 0
             Jne checkOnceMore

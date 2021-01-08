@@ -199,9 +199,7 @@
     shieldControlFirst macro P_y,  upKey,  downKey                          ;Takes the dimension that we would like to control,  and the two keys using for controling that dimension
         local Read,  movesUp,  movesDown,  resetPositionHigh,  resetPositionLow,  None
         ;Check if any key is pressed,  if yes then check if it's the specified  upkay/down key for the former move up and for the latter move down,  check collisions with upper and lower boundaries for each.
-        getKeyboardStatus
-        JZ None                                                             ;No key was pressed,  see if any neccessary action is needed.
-            readKey                                                         ;else key was pressed
+                                                            ;else key was pressed
             cmp Ah, upKey                                                   ;Left
             JE movesUp
             cmp Ah, downKey                                                 ;Right
@@ -245,7 +243,6 @@
     shieldControlSecond macro P_y,  upKey,  downKey                         ;Replicates the function above but for the left shield
         local Reads,  movesUps,  movesDowns,  resetPositionHighs,  resetPositionLows,  Nones
 
-        JZ Nones 
             cmp Ah, upKey
             JE movesUps
             cmp Ah, downKey 
@@ -444,3 +441,52 @@
         cmp bx,len
         jnz whileEx
         endm timeToCopy
+
+    setBaudRate macro MSByte, LSByte
+    ;Set Divisor Latch Access Bit
+        mov dx, 3fbh                         ;Line Control Register
+        mov al, 10000000b                    
+        out dx, al                           ;Telling the Line Control Register its time to use 3f9h as an MSB to the divisor value that sets the baud rate.
+
+    ;Set LSB byte of the Baud Rate Divisor Latch register.
+        mov dx, 3f8h
+        mov al, LSByte                       ;configuration of LSB line			
+        out dx, al
+
+    ;Set MSB byte of the Baud Rate Divisor Latch register.
+        mov dx, 3f9h
+        mov al, MSByte                      ;configuration of MSB line
+        out dx, al       
+    endm setBaudRate
+
+    setProtocol macro protocol              ;e.g. 0:Access to Communication, 0:Set Break disabled, 011:Even Parity, 0:One Stop Bit, 11:8bits
+        mov dx, 3fbh
+        mov al, protocol
+        out dx, al
+    endm setProtocol
+
+    sendByte macro happyByte                    ;The byte to be sent.
+        local whileHolding
+        mov dx , 3FDH                           ;Line Status Register
+        whileHolding: 
+            In al , dx                          ;Read Line Status , to guarantee that the holder register is empty
+            test al , 00100000b                 ;If zero then it's not empty, otherwise:
+            JZ whileHolding      
+        mov dx , 3F8H                           ;Transmit data register
+        mov al, happybyte
+        out dx , al
+    endm sendByte
+
+    receiveByte macro freshByte         ;The byte to be received would be in freshByte, the Restart tells it where to go in case data isn't ready to be received.       
+        local whileNotDataReady
+        mov dx , 3FDH                           ;Line Status Register
+        whileNotDataReady:
+            in al, dx
+            test al, 1                          ;In fact is 00000001b
+            JZ  Reset                         ;Not ready, otherwise: 
+            mov dx, 3F8H
+            in al, dx
+            mov freshByte, al
+            Reset:
+            Mov al, 0ffh                        ;In case not ready put 0ffh in al (flag)
+    endm receiveByte

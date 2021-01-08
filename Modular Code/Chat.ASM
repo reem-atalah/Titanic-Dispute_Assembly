@@ -86,7 +86,7 @@ endm getcursorposition
  extrn UserName:byte
  extrn playerName2:byte
 
- public MAINChAT:far
+ public MAINChAT
 .286
 .MODEL HUGE
 .STACK 64   
@@ -195,7 +195,7 @@ DispalyPlayerName proc
     MOV  BH, 0     ;PAGE NUMBER.
     INT  10H       ;BIOS SCREEN SERVICES.
     Print exitMessage1
-    Print  userName2
+    Print  playerName2
     Print exitMessage2
     
 ret
@@ -362,4 +362,4 @@ MAINChAT endp
 
 
 
-end MAIN 
+end MAINChAT

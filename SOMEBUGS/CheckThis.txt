@@ -1,0 +1,2 @@
+Copy the content (just the content) of this folder to:
+C:\Users\'Username'\.vscode\extensions\xsro.masm-tasm-0.7.0\workspace

@@ -11,6 +11,12 @@
         mov ah,  2h
         int 21h
     endm displayCharacter
+    
+    printCharacter macro Char                                     ;Takes a character and displays it
+        mov dl,  Char
+        mov ah,  2h
+        int 21h
+    endm printCharacter
 
     DisplayNumber macro number                                      ;Need comments here.
         pusha
@@ -123,7 +129,8 @@
     endm drawPixel_implicit
 
     return macro
-        int 20h
+    mov ah,04Ch
+    int 21h
     endm return
 
 
@@ -145,28 +152,39 @@
     endm checkMousePointer
 
 
-    blankScreen macro color,  from,  to                                     ;from,  to indicates the range on x-axis
+    blankScreen macro color,  from_x,  to_x                                     ;from,  to indicates the range on x-axis
         mov ah, 06                                                          ;Scroll (Zero lines anyway)
         mov al, 00h                                                         ;to blank the screen
         mov bh, color                                                       ;color to blank the screen with
         mov ch,  0h                                                         ;0 to 24 (text mode is 80x25)
-        mov cl, from 
+        mov cl, from_x 
         mov dh,  24
-        mov dl, to
+        mov dl, to_x
                                                                             ;to the end of the screen
         int 10h
     endm blankScreen 
 
-    notificationBar macro color,  from,  to                                 ;from,  to indicates the range on y-axis,  this uses the scroll interrupt as the previous macro
+    notificationBar macro color,  from_y,  to_y                                 ;from,  to indicates the range on y-axis,  this uses the scroll interrupt as the previous macro
         mov ah, 06                                                          ;Scroll (Zero lines anyway)
         mov al, 0h                                                          ;to blank the screen
         mov bh, color                                                       ;color to blank the screen with
-        mov ch, from                                                        ;Takes the who
+        mov ch, from_y                                                        ;Takes the who
         mov cl, 0h
-        mov dh, to
+        mov dh, to_y
         mov dl, 79                                                          ;(text mode is 80x25)
         int 10h
     endm notificationBar
+    
+    clearSection macro color,  from_x,  to_x, from_y, to_y, scroll   ;from,  to indicates the range on y-axis,  this uses the scroll interrupt as the previous macro
+        mov ah, 06                                                          ;Scroll (Zero lines anyway)
+        mov al, scroll                                                      ;to blank the screen
+        mov bh, color                                                       ;color to blank the screen with
+        mov ch, from_y                                                      ;Takes the who
+        mov cl, from_x
+        mov dh, to_y
+        mov dl, to_X                                                        ;(text mode is 80x25)
+        int 10h
+    endm clearSection
 
     resetMouse macro
         mov  ax,  0000h                                                     ;reset mouse
@@ -415,7 +433,6 @@
             cmp ah, 03                                  ;scanecode for 2
             JZ far ptr LevelTwo
             jmp getUserChoice
-            ret
     endm levelSelection 
 
     timeToSwap macro List1, List2, len ;Swaps two lists together (so we can choose the correct parameters depending on the level)
@@ -478,7 +495,7 @@
     endm sendByte
 
     receiveByte macro freshByte         ;The byte to be received would be in freshByte, the Restart tells it where to go in case data isn't ready to be received.       
-        local whileNotDataReady
+        local whileNotDataReady, Reset
         mov dx , 3FDH                           ;Line Status Register
         whileNotDataReady:
             in al, dx
@@ -490,3 +507,15 @@
             Reset:
             Mov al, 0ffh                        ;In case not ready put 0ffh in al (flag)
     endm receiveByte
+    
+    receiveByteG macro freshByte         ;The byte to be received would be in freshByte, the Restart tells it where to go in case data isn't ready to be received.       
+        local whileDataNotReady
+        mov dx , 3FDH                           ;Line Status Register
+        whileDataNotReady:
+            in al, dx
+            test al, 1                          ;In fact is 00000001b
+            JZ  whileDataNotReady                ;Not ready, otherwise: 
+            mov dx, 3F8H
+            in al, dx
+            mov freshByte, al
+    endm receiveByteG

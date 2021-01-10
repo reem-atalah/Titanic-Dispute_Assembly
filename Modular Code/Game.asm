@@ -46,7 +46,6 @@
         colorBall db 0h
         currentBallIndex dw ? 
         ballCount dw 4h
-        destroyedBallsCountHealth db 255
         ;Refresher Quantities (when any of the above is reset)
         Sx dw 70, 240, 70, 240, 70, 240                             ;x position of the ball
         Sy dw 160, 40, 40, 160, 150, 50                             ;y position of the ball
@@ -85,23 +84,28 @@
    
 
 ;Messages
-    Msg db 20 dup(10, 13), 09h, "Please Enter Your Name:", 2 dup(10, 13), 09h, '$'
+    byeMsg db  "Thank you for playing, feel free to quit.",'$'
+    invitationDeclinedMSG db  "You're invitation was declined, please try again.",'$'
+    Msg db "Please Enter Your Name:", 2 dup(10, 13), 09h, '$'
     UserName db 30, ?,  30 dup('$')
     playerName2 db "Radwa", '$'
-    sendChatMSG db 11 dup(10, 13), "you sent a chat invitation to ", '$'
-    sendGameMSG db 11 dup(10, 13), "you sent a game invitation to ", '$'
-    requestKeyMSG db 2 dup(10, 13), 09h, "PLease Enter Any Key To continue", '$'
-    MSGFrist db 2 dup(10, 13), 09h, "PLease Try Again with Letter in Frist,  Press any Key To continue", '$'
-    MSGLong db 2 dup(10, 13), 09h, "PLease Try Again with shoter name,  Press any Key To continue", '$'
-    MSGshort db 2 dup(10, 13), 09h, "PLease Try Again with your name,  Press any Key To continue", '$'
-    MSGSpecial db 2 dup(10, 13), 09h, "PLease Try Again Don't use Spcial char,  Press any Key To continue", '$'
-    Msg3 db 7 dup(10, 13), 09h, "*To start chatting press F1", 2 dup(10, 13), 09h, "*To start game press F2", 2 dup(10, 13), 09h, "*To end the program press ESC", '$'
+    sendChatMSG db "you sent a chat invitation to ", '$'
+    sendGameMSG db "you sent a game invitation to ", '$'
+    receiveChatMSG db "you received a chat invitation from ", '$'
+    receiveGameMSG db "you received a game invitation from ", '$'
+    invitationPrompt db " Press Space-bar to Accept", '$'           ;Scan code is 39
+    requestKeyMSG db "PLease Enter Any Key To continue", '$'
+    MSGFrist db "PLease Try Again with Letter in Frist,  Press any Key To continue", '$'
+    MSGLong db "PLease Try Again with shoter name,  Press any Key To continue", '$'
+    MSGshort db "PLease Try Again with your name,  Press any Key To continue", '$'
+    MSGSpecial db "PLease Try Again Don't use Spcial char,  Press any Key To continue", '$'
+    Msg3 db "*To start chatting press F1", 2 dup(10, 13), 09h, "*To start game press F2", 2 dup(10, 13), 09h, "*To end the program press ESC", '$'
     levelOneMessage db "Level I - Calm Day", '$'
     levelTwoMessage db "Level II - Sea Storm", '$'
     Loses db ' lost:( ', '$'   
     Wins db ' has earned victory ^_^', '$'
     quitGame db 'Press any key to go the main menu', '$'
-
+    isMain db 0                 ;1 Means I'm who sent the invitation and vice versa for 0.
 
 
 .Code
@@ -113,26 +117,26 @@
         setProtocol 00011011b
         videoMode 13h                           ;https://stanislavs.org/helppc/int_10.html click on set video modes for all modes
         blankScreen 0h, 0, 4fh
+        setTextCursor 8,18
         Print MSG
         blankScreen 0h, 0, 0
         Logo 30, 30
         call inputValidation
+        setTextCursor 5,23
         Print requestKeyMSG                     ;show message of continue 
         blankScreen 0h, 0, 0 
         readKey                                 ;get any key to continue
         videoMode 13h 
         Logo 30, 30
         Start:
-        blankScreen 0h, 0, 4fh
-        Print MSG3
-        blankScreen 0h, 0, 7
-        notificationBar 07, 15h, 18h          ;draw notification bar
         call menuNavigation                   ;The main menu
  videoMode 03h ;Text mode.
 return
 MAIN ENDP 
-    
 
+
+;Level selection, username exchange, space-bar, fixing printing issues, stop random
+;In-game chatting
 ;Procedures relating to graphics:
    GameProc proc near
     levelSelection
@@ -162,7 +166,7 @@ MAIN ENDP
         call showHealth
         call scoreControl                                   ;Control the score
         dynamicBalls                                        ;Responsible for drawing and maintaining ball movement
-       ;Controlling objects in the game.    
+       ;Controlling objects in the game.   
         getKeyboardStatus
         JZ noKeyPressed                                     ;No key was pressed, check if any
             readKey
@@ -190,53 +194,118 @@ leftShieldControl proc near
         ret
 endp leftShieldControl  
 ;description
-menuNavigation proc near
-        resetMouse
-        showMouse
-        getDecision:                      ;get the player's decision
-            checkMousePointer
-            cmp bx, 1
-            jne checkOnceMore
-            shr cx, 1                        ;The shift right here is so that we divide whatever cx we get from the mouse interrupt by two since it works with 640x200 instead of 320x200
-            ;Checking if mouse click was on exit game, then checking for chat then the game it self
-            checkMouseRegion  65, 305, 85, 95
-            cmp ax, 0
-            Jne checkGame
-            JMP ExitGame
-            checkGame:
-            checkMouseRegion 65, 305, 70, 80
-            cmp ax, 0
-            Jne checkChat
-            JMP theGame
-            checkChat:   
-            checkMouseRegion 65, 305, 55, 65
-            cmp ax, 0
-            Jne checkOnceMore
-            jmp Chat
-    checkOnceMore:
+menuNavigation proc near  
+        blankScreen 0h, 0, 4fh                  ;Blank the whole screen for the main menu 
+
+        getDecision:
+        notificationBar 07, 15h, 18h            ;draw notification bar
+        setTextCursor 8,5
+        Print MSG3
             getkeyboardStatus
-            JZ getDecision ;No key was pressed
-            readKey
+            JZ checkTheOtherPlayerCheckPoint  ;No key was pressed, check if anything is to be recieved
+            readKey                           ;Key was pressed, check, read then send.
             cmp ah, 3Bh                       ;scancode for F1
-            JZ  Chat
-            cmp ah, 3Ch                       ;scanecode for F2
+            JZ  chatCheckPoint
+            cmp ah, 3Ch                       ;scancode for F2
             JZ TheGame
-            cmp al, 1Bh                       ;asscii code for ESC
+            cmp ah, 01h                       ;scancode code for ESC
             Jz ExitGame
-        jmp getDecision
-    TheGame:                        ;start the game
-        Print sendGameMSG
-        Print playerName2
-        readKey
+        jmp getDecision                       ;None of the action keys were pressed
+    
+        checkTheOtherPlayerCheckPoint:        ;To solve the jump range problem
+            jmp checkTheOtherPlayer    
+        chatCheckPoint:
+            jmp Chat
+
+    ExitGame:
+        sendByte 'E'                        ;Send E, if E was received at the other party then quit (Check leaveGame)
+        blankScreen 0,0,79                  ;Prints Quit Message, then quits.
+        setTextCursor 0,1
+        print byeMsg
+        setTextCursor 0,3
+        return
+    
+    TheGame:                         
+        sendByte 'G'                 ;Send G, if G was received by the other party then check if they would like accept the invitation
+        ReceiveByteG Ch              ; If the other party accepted the invitation then print a message, set a flag, wait for a key then go to the game.
+        cmp Ch, 'G'
+        JNE declineinvitation        ;Otherwise print an invitation declined message with both staying in the main menu afterwards.
+        ;Invitation Accepted:
+        setTextCursor 4,22
+            Print sendGameMSG
+            Print playerName2
+            readKey
+        mov isMain, 1h               ;Invitation Sender flag
         Call GameProc
         return
     CHAT:
-        Print sendChatMSG
-        Print playerName2
-        readKey
-        Call MAINChAT
+        sendByte 'C'                   ;Flag for sent chat invitation
+        ReceiveByteG Ch                ;Send C, if C was received by the other party then check if they would like accept the invitation
+        cmp Ch, 'C'                    ; If the other party accepted the invitation then print a message,  wait for a key then go to chat.
+        JNE declineInvitation          ;Otherwise print an invitation declined message with both staying in the main menu afterwards.
+        ;Invitation Accepted :
+        setTextCursor 4,22
+            Print sendChatMSG
+            Print playerName2
+            readKey
+        Call mainChat
         return
-    ExitGame: 
+
+    declineInvitation:
+
+        print invitationDeclinedMSG           ;Invitation Declined
+        jmp getDecision
+
+    checkTheOtherPlayer:                      ;Byte received, depending on what it is we should print an invitation.
+     receiveByte ah
+            cmp ah, 'C'                       ;scancode for F1
+            JZ  Chatinv
+            cmp ah, 'G'                       ;scancode for F2
+            JZ TheGameinv
+            cmp ah, 'E'                      ;scancode for ESC
+            Jz leaveGame
+            jmp getDecision                   ;The byte sent was not an action key
+
+    ;Receiving Block:
+    leaveGame:  
+        jmp exitgame
+        
+    TheGameInv:                     ;start the game.
+        mov bl,0Fh                  ;Flag for declining the invitation. 
+        setTextCursor 4,22
+            Print receiveGameMSG
+            Print playerName2
+            setTextCursor 4,23
+            print invitationPrompt
+            readkey
+        cmp ah, 39h                   ;Check if space bar was pressed.
+        jne sendAnswer               ;bl has the value corresponding to whether the invitation was accepted or not.
+        mov bl,'G'                   ;So if we accept we send G, and start the game.
+            sendByte bl
+            Call GameProc
+            return
+        sendAnswer:                  ;Otherwise if not accepted send the decline flag
+            sendbyte bl
+            jmp getDecision
+    
+    ChatInv:
+        mov bl,0Fh                  ;Flag for declining the invitation. 
+        setTextCursor 4,22
+            Print receiveChatMSG
+            Print playerName2
+            setTextCursor 4,23
+            print invitationPrompt
+            readkey
+        cmp ah,39h                    ;Check if space bar was pressed.
+        jne sendResponse              ;bl has the value corresponding to whether the invitation was accepted or not.
+        mov bl,'C'                   ;So if we accept we send C, and start the chat.
+            sendByte bl
+            call mainChat 
+            return 
+        sendResponse:                ;Otherwise send the flag
+            sendbyte bl
+            jmp getDecision
+
     ret 
     menuNavigation endp
 
@@ -706,12 +775,12 @@ checkLeftShieldImpact proc near ;deals with wave collisions
         cmp bx, 50
         JL drawRed                                  ;in case less than 50, draw make the hp bar red.
         drawHealthBar  40,  1,  49,  1,  bx         ;Takes x, y, color, height, width
-        jmp checkTheOtherPlayer
+        jmp checkTheOtherParty
         drawRed:
             drawHealthBar  40,  1,  41,  1,  bx
             ;mov colorshieldleft, 41                 ;change the shield color for the winning player.
             ;mov colorShieldRight, 0eh
-        checkTheOtherPlayer:                                  ;Otherwise do the same check for the other health bar, note that bx has the actual score and bp has the starting position
+        checkTheOtherParty:                                  ;Otherwise do the same check for the other health bar, note that bx has the actual score and bp has the starting position
             mov bl,  ScoreRight
             mov bh, 0
             mov bp, 280

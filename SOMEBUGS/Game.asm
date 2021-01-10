@@ -104,6 +104,7 @@
    sentinvitation db ?
    recevieinvition db 1h
    level db ?
+   myflag db 1h
    
 
 
@@ -120,8 +121,7 @@
         blankScreen 0h, 0, 0
         Logo 30, 30
         call inputValidation
-        CALL sendmyname 
-       ; CALL receviemyname
+        CALL sendandreceivename
         Print requestKeyMSG                     ;show message of continue 
         blankScreen 0h, 0, 0 
         readKey             ;get any key to continue
@@ -185,37 +185,54 @@ MAIN ENDP
         call scoreControl                                   ;Control the score
         dynamicBalls                                        ;Responsible for drawing and maintaining ball movement
        ;Controlling objects in the game. 
-        cmp  recevieinvition,3ch
+        cmp  sentinvitation,3ch
         jz rightrecevie   
         getKeyboardStatus
         JZ noKeyPressed                                     ;No key was pressed, check if any
             readKey
+            cmp al,1Bh
+            Jz closegame
             sendByte ah
             call leftShieldControl                          
             noKeyPressed:
                 receiveByte ah
                 cmp ah, 0ffh
                 je ItsAFK
+                cmp ah,1bh
+                jz ExitmyGame
                 call RightShieldControl
                 ItsAFK:
                 call gameOverScreen 
                 jmp whileTime
+                closegame:sendByte al
+                 JMP ExitmyGame
         rightrecevie:        
         getKeyboardStatus
         JZ noKeyPressed1                                     ;No key was pressed, check if any
             readKey
+           cmp al,1Bh
+            Jz closegame2
             sendByte ah
             call rightShieldControl                          
             noKeyPressed1:
                 receiveByte ah
                 cmp ah, 0ffh
                 je ItsAFK2
+                cmp ah,1bh
+                jz ExitmyGame
                 call leftShieldControl
                 ItsAFK2:
                 call gameOverScreen                                             
             jmp whileTime
+            closegame2:sendByte al
+                   JMP ExitmyGame
     videoMode 03h ;Text mode. 
     return
+    exitmygame:
+       videoMode 03h ;Text mode.
+      mov AH,4CH  ;end programm
+       INT 21H
+      ret
    GameProc ENDP 
 
 rightShieldControl proc near
@@ -280,27 +297,65 @@ endp leftShieldControl
 ;     menuNavigation endp
     menuNavigation proc near             
 
-      
-    ;    readKey
-        receiveByte  recevieinvition    
-     compare: cmp recevieinvition,ah
-        je excute
-       
-      readagian:  readKey   
-       cmp recevieinvition,1h
-        jnz compare
-      label12:  mov sentinvitation,ah
-                sendByte ah
-               jz excute
+       beginagain: getkeyboardStatus
+        jnz send
+        jmp recevie
+         
+       send:readKey
+           cmp ah,3ch
+           jz gosend
+           cmp ah,3bh
+           jz gosend
+           cmp ah,01h
+           jz gosend
+           jmp recevie
+         gosend:sendByte ah
+               mov sentinvitation,ah
+               cmp ah,3ch
+                jz TheGame
+                cmp ah,3bh
+                jz chat
+                jmp outofgame
+             
+      recevie: receiveByte  recevieinvition 
+             cmp recevieinvition,0ffh
+             je  beginagain
+        readtani:   readKey
+             cmp ah,recevieinvition
+             je start1
+             jmp readtani
 
-      excute:
-          cmp ah, 3Bh                       ;scancode for F1
-            JZ  Chat
-            cmp ah, 3Ch                       ;scanecode for F2
-            JZ TheGame
-            cmp al, 1Bh                       ;asscii code for ESC
-            Jz ExitGame
-            jmp  readagian
+     start1: cmp recevieinvition,3ch
+        jz TheGame
+         cmp recevieinvition,3bh
+          jz chat
+          jmp outofgame
+   
+     
+    outofgame:
+     videoMode 03h ;Text mode.
+      mov AH,4CH  ;end programm
+       INT 21H
+    ret
+    ;     receiveByte  recevieinvition    
+    ;  compare: cmp recevieinvition,ah
+    ;     je excute
+       
+    ;   readagian:  readKey   
+    ;    cmp recevieinvition,1h
+    ;     jnz compare
+    ;   label12:  mov sentinvitation,ah
+    ;             sendByte ah
+    ;            jz excute
+
+    ;   excute:
+    ;       cmp ah, 3Bh                       ;scancode for F1
+    ;         JZ  Chat
+    ;         cmp ah, 3Ch                       ;scanecode for F2
+    ;         JZ TheGame
+    ;         cmp al, 1Bh                       ;asscii code for ESC
+    ;         Jz ExitGame
+    ;         jmp  readagian
            
 
     ;  readagain  :readKey 
@@ -326,13 +381,13 @@ endp leftShieldControl
             
     TheGame:                        ;start the game
         Print sendGameMSG
-        Print playerName2
+        Print playerName2+2
         readKey
         Call GameProc
         return
     CHAT:
         Print sendChatMSG
-        Print playerName2
+        Print playerName2+2
         readKey
         Call MAINChAT
         return
@@ -408,38 +463,84 @@ checkDestroyedCount proc near
     Endd:
     ret
 checkDestroyedCount endp
-sendmyname proc near
-  mov cl,UserName+1
-  mov ch,0
-  mov si,offset UserName+2
+; sendmyname proc near
+;   mov cl,UserName+1
+;   mov ch,0
+;   mov si,offset UserName+2
 
-  sendstring:
-    mov al,[si]
-     sendByte al
-     displayNumber al
-     inc si
-     dec cx
-     cmp cx,0
-     jnz sendstring
-     sendByte 2ah
-     ret
+;   sendstring:
+;     mov al,[si]
+;      sendByte al
+;      inc si
+;      dec cx
+;      cmp cx,0
+;      jnz sendstring
+;      sendByte 2ah
+;      ret
 
-sendmyname endp
-receviemyname proc near
-  mov si,offset playerName2+2
-  receviestring:
-     receiveByte al
-     cmp al,0ffh
-     jz receviestring
-      cmp al,2ah
-      jz outofrec
-      mov [si],al
-     inc si
-     jmp  receviestring
-      outofrec:
-     ret
+; sendmyname endp
+; receviemyname proc near
+;   mov si,offset playerName2+2
+;   receviestring:
+;      receiveByte al
+;      cmp al,0ffh
+;      jz receviestring
+;       cmp al,2ah
+;       jz outofrec
+;       mov [si],al
+;      inc si
+;      jmp  receviestring
+;       outofrec:
+;      ret
      
-receviemyname endp
+; receviemyname endp
+;description
+sendandreceivename PROC near
+      mov si,offset UserName+2
+      mov di,offset playerName2+2
+      mov cl, userName+1
+      mov ch,0
+     AGAIN1: 
+        In al , dx ;Read Line Status , A byte is input into AL from the port addressed by DX
+        test al , 00100000b  ;test: AND without changing values
+        JZ Recivestring ;Not empty (This line may need to change)
+       cmp cx,0 ;If empty put the VALUE in Transmit data register
+        jz flagstring
+        mov dx , 3F8H ; Transmit data register
+        mov al,[si]
+        out dx , al
+        inc si
+        dec cx
+    
+        jmp Recivestring
+
+    ;Receiving a value
+    ;Check that Data is Ready
+    flagstring:
+       mov dx,3f8h
+       mov al,2ah
+      out dx , al
+      mov myflag,0h
+
+    Recivestring:
+  
+    mov dx , 3FDH ; Line Status Register
+    CHK1: in al , dx
+        test al , 1
+        JZ  AGAIN1
+        mov dx , 03F8H
+        in al , dx
+        cmp al,2ah
+        jz checkmyflag
+        mov [di],al
+        inc di
+        JMP AGAIN1
+
+    checkmyflag:  cmp myflag,0H
+             jnz    AGAIN1   
+        ret
+    
+sendandreceivename ENDP
 ;Algorithm: 
 
 
@@ -827,7 +928,7 @@ checkLeftShieldImpact proc near ;deals with wave collisions
         setTextCursor 2, 2                       ;Set Cursor for position of leftscore
         displayNumber scoreLeft                  ;draw leftscore
         setTextCursor 33, 1                       ;Set Cursor for position of rightscore
-        print playerName2
+        print playerName2+2
         setTextCursor 33, 2                       ;Set Cursor for position of rightscore
         displayNumber scoreRight                 ;draw rightscore
     endp scoreControl
@@ -873,7 +974,7 @@ gameOverScreen proc near
             setTextCursor 4, 8
             print Wins
             setTextCursor 4, 10
-            print PlayerName2
+            print PlayerName2+2
             setTextCursor 4, 12
             print Loses        
             setTextCursor 4, 14
@@ -886,7 +987,7 @@ gameOverScreen proc near
             JG Bridge
             blankScreen 104, 0, 4fh
             setTextCursor 4, 6
-            print playerName2
+            print playerName2+2
             setTextCursor 4, 8
             print Wins
             setTextCursor 4, 10

@@ -46,7 +46,6 @@
         colorBall db 0h
         currentBallIndex dw ? 
         ballCount dw 4h
-        destroyedBallsCountHealth db 255
         ;Refresher Quantities (when any of the above is reset)
         Sx dw 70, 240, 70, 240, 70, 240                             ;x position of the ball
         Sy dw 160, 40, 40, 160, 150, 50                             ;y position of the ball
@@ -85,28 +84,31 @@
    
 
 ;Messages
-    Msg db 20 dup(10, 13), 09h, "Please Enter Your Name:", 2 dup(10, 13), 09h, '$'
+    byeMsg db  "Thank you for playing, feel free to quit.",'$'
+    invitationDeclinedMSG db  "You're invitation was declined, please try again.",'$'
+    Msg db "Please Enter Your Name:", 2 dup(10, 13), 09h, '$'
     UserName db 30, ?,  30 dup('$')
     playerName2 db 30, ?,  30 dup('$')
-    sendChatMSG db 11 dup(10, 13), "you sent a chat invitation to ", '$'
-    sendGameMSG db 11 dup(10, 13), "you sent a game invitation to ", '$'
-    requestKeyMSG db 2 dup(10, 13), 09h, "PLease Enter Any Key To continue", '$'
-    MSGFrist db 2 dup(10, 13), 09h, "PLease Try Again with Letter in Frist,  Press any Key To continue", '$'
-    MSGLong db 2 dup(10, 13), 09h, "PLease Try Again with shoter name,  Press any Key To continue", '$'
-    MSGshort db 2 dup(10, 13), 09h, "PLease Try Again with your name,  Press any Key To continue", '$'
-    MSGSpecial db 2 dup(10, 13), 09h, "PLease Try Again Don't use Spcial char,  Press any Key To continue", '$'
-    Msg3 db 7 dup(10, 13), 09h, "*To start chatting press F1", 2 dup(10, 13), 09h, "*To start game press F2", 2 dup(10, 13), 09h, "*To end the program press ESC", '$'
+    sendChatMSG db "you sent a chat invitation to ", '$'
+    sendGameMSG db "you sent a game invitation to ", '$'
+    receiveChatMSG db "you received a chat invitation from ", '$'
+    receiveGameMSG db "you received a game invitation from ", '$'
+    invitationPromptforgame db " Press F2 to Accept game", '$'           
+    invitationPromptforchat db " Press F1 to Accept chat", '$'          
+    requestKeyMSG db "PLease Enter Any Key To continue", '$'
+    MSGFrist db "PLease Try Again with Letter in Frist,  Press any Key To continue", '$'
+    MSGLong db "PLease Try Again with shoter name,  Press any Key To continue", '$'
+    MSGshort db "PLease Try Again with your name,  Press any Key To continue", '$'
+    MSGSpecial db "PLease Try Again Don't use Spcial char,  Press any Key To continue", '$'
+    Msg3 db "*To start chatting press F1", 2 dup(10, 13), 09h, "*To start game press F2", 2 dup(10, 13), 09h, "*To end the program press ESC", '$'
     levelOneMessage db "Level I - Calm Day", '$'
     levelTwoMessage db "Level II - Sea Storm", '$'
     Loses db ' lost:( ', '$'   
     Wins db ' has earned victory ^_^', '$'
     quitGame db 'Press any key to go the main menu', '$'
-   sentinvitation db ?
-   recevieinvition db 1h
-   level db ?
+    isMain db 0                 ;1 Means I'm who sent the invitation and vice versa for 0.
+   level db ? 
    myflag db 1h
-   
-
 
 .Code
     MAIN PROC FAR 
@@ -117,37 +119,34 @@
         setProtocol 00011011b
         videoMode 13h                           ;https://stanislavs.org/helppc/int_10.html click on set video modes for all modes
         blankScreen 0h, 0, 4fh
+        setTextCursor 8,18
         Print MSG
         blankScreen 0h, 0, 0
         Logo 30, 30
         call inputValidation
         CALL sendandreceivename
+        setTextCursor 5,23
         Print requestKeyMSG                     ;show message of continue 
         blankScreen 0h, 0, 0 
-        readKey             ;get any key to continue
+        readKey                                 ;get any key to continue
         videoMode 13h 
         Logo 30, 30
         Start:
-        blankScreen 0h, 0, 4fh
-        Print MSG3
-        blankScreen 0h, 0, 7
-        notificationBar 07, 15h, 18h 
-       
-        ;draw notification bar
         call menuNavigation                   ;The main menu
  videoMode 03h ;Text mode.
 return
 MAIN ENDP 
-    
 
+
+;username exchange
+;; f2 twice?????
+;In-game chatting
 ;Procedures relating to graphics:
    GameProc proc near
-   
-   cmp sentinvitation,3ch
-   jnz x
+    cmp  isMain,0h
+    jz x
    jmp y
-   x:mov sentinvitation,0
-   Jmp notchoice
+   x:Jmp notchoice
    y:levelSelection
    jmp done
     notchoice:
@@ -162,7 +161,7 @@ MAIN ENDP
         timeToCopy V_x, Vx, 12
         timeToSwap positionThreshold, PositionLowerBound, 2
      LevelTwo1: 
-   done:                                              ;Default is level two, for level one we do necessary swapping first
+   done:                                                           ;Default is level two, for level one we do necessary swapping first
    videoMode 13h
    initialtime:
     getCurrentMinute                                        ;Will be used to periodically shoot cannons, current minute is put in cl
@@ -177,62 +176,45 @@ MAIN ENDP
         mov Centiseconds, dl                                ;centisecond(s) has passed update the time variable with the new time.
         call generateBallsWithTime
         blankScreen 104, 4, 35                              ;Color,  from,  to (on the x-axis)
-        Waves
-                                                       ;repeated calls to static waves
+        Waves                                               ;repeated calls to static waves
         call drawShieldLeft                                 ;Draw left shield
         call drawShieldRight                                ;Draw right shield
         call showHealth
         call scoreControl                                   ;Control the score
         dynamicBalls                                        ;Responsible for drawing and maintaining ball movement
-       ;Controlling objects in the game. 
-        cmp  sentinvitation,3ch
-        jz rightrecevie   
+       ;Controlling objects in the game.   
+        cmp  isMain,0h
+        jz rightrecevie  
         getKeyboardStatus
         JZ noKeyPressed                                     ;No key was pressed, check if any
             readKey
-            cmp al,1Bh
-            Jz closegame
             sendByte ah
             call leftShieldControl                          
             noKeyPressed:
                 receiveByte ah
                 cmp ah, 0ffh
                 je ItsAFK
-                cmp ah,1bh
-                jz ExitmyGame
-                call RightShieldControl
+                call rightShieldControl
                 ItsAFK:
-                call gameOverScreen 
-                jmp whileTime
-                closegame:sendByte al
-                 JMP ExitmyGame
-        rightrecevie:        
+                call gameOverScreen                                 
+            jmp whileTime
+     rightrecevie:        
         getKeyboardStatus
         JZ noKeyPressed1                                     ;No key was pressed, check if any
             readKey
-           cmp al,1Bh
-            Jz closegame2
             sendByte ah
             call rightShieldControl                          
             noKeyPressed1:
                 receiveByte ah
                 cmp ah, 0ffh
                 je ItsAFK2
-                cmp ah,1bh
-                jz ExitmyGame
                 call leftShieldControl
                 ItsAFK2:
                 call gameOverScreen                                             
             jmp whileTime
-            closegame2:sendByte al
-                   JMP ExitmyGame
+           
     videoMode 03h ;Text mode. 
     return
-    exitmygame:
-       videoMode 03h ;Text mode.
-      mov AH,4CH  ;end programm
-       INT 21H
-      ret
    GameProc ENDP 
 
 rightShieldControl proc near
@@ -245,156 +227,123 @@ leftShieldControl proc near
         ret
 endp leftShieldControl  
 ;description
-; menuNavigation proc near
-;         resetMouse
-;         showMouse
-;         getDecision:                      ;get the player's decision
-;             checkMousePointer
-;             cmp bx, 1
-;             jne checkOnceMore
-;             shr cx, 1                        ;The shift right here is so that we divide whatever cx we get from the mouse interrupt by two since it works with 640x200 instead of 320x200
-;             ;Checking if mouse click was on exit game, then checking for chat then the game it self
-;             checkMouseRegion  65, 305, 85, 95
-;             cmp ax, 0
-;             Jne checkGame
-;             JMP ExitGame
-;             checkGame:
-;             checkMouseRegion 65, 305, 70, 80
-;             cmp ax, 0
-;             Jne checkChat
-;             JMP theGame
-;             checkChat:   
-;             checkMouseRegion 65, 305, 55, 65
-;             cmp ax, 0
-;             Jne checkOnceMore
-;             jmp Chat
-;     checkOnceMore:
+menuNavigation proc near  
+        blankScreen 0h, 0, 4fh                  ;Blank the whole screen for the main menu 
 
-;             getkeyboardStatus
-;             JZ getDecision ;No key was pressed
-;             readKey
-;             cmp ah, 3Bh                       ;scancode for F1
-;             JZ  Chat
-;             cmp ah, 3Ch                       ;scanecode for F2
-;             JZ TheGame
-;             cmp al, 1Bh                       ;asscii code for ESC
-;             Jz ExitGame
-;         jmp getDecision
-;     TheGame:                        ;start the game
-;         Print sendGameMSG
-;         Print playerName2
-;         readKey
-;         Call GameProc
-;         return
-;     CHAT:
-;         Print sendChatMSG
-;         Print playerName2
-;         readKey
-;         Call MAINChAT
-;         return
-;     ExitGame: 
-;     ret 
-;     menuNavigation endp
-    menuNavigation proc near             
+        getDecision:
+        notificationBar 07, 15h, 18h            ;draw notification bar
+        setTextCursor 8,5
+        Print MSG3
+            getkeyboardStatus
+            JZ checkTheOtherPlayerCheckPoint  ;No key was pressed, check if anything is to be recieved
+            readKey                           ;Key was pressed, check, read then send.
+            cmp ah, 3Bh                       ;scancode for F1
+            JZ  chatCheckPoint
+            cmp ah, 3Ch                       ;scancode for F2
+            JZ TheGame
+            cmp ah, 01h                       ;scancode code for ESC
+            Jz ExitGame
+        jmp getDecision                       ;None of the action keys were pressed
+    
+        checkTheOtherPlayerCheckPoint:        ;To solve the jump range problem
+            jmp checkTheOtherPlayer    
+        chatCheckPoint:
+            jmp Chat
 
-       beginagain: getkeyboardStatus
-        jnz send
-        jmp recevie
-         
-       send:readKey
-           cmp ah,3ch
-           jz gosend
-           cmp ah,3bh
-           jz gosend
-           cmp ah,01h
-           jz gosend
-           jmp recevie
-         gosend:sendByte ah
-               mov sentinvitation,ah
-               cmp ah,3ch
-                jz TheGame
-                cmp ah,3bh
-                jz chat
-                jmp outofgame
-             
-      recevie: receiveByte  recevieinvition 
-             cmp recevieinvition,0ffh
-             je  beginagain
-        readtani:   readKey
-             cmp ah,recevieinvition
-             je start1
-             jmp readtani
-
-     start1: cmp recevieinvition,3ch
-        jz TheGame
-         cmp recevieinvition,3bh
-          jz chat
-          jmp outofgame
-   
-     
-    outofgame:
-     videoMode 03h ;Text mode.
-      mov AH,4CH  ;end programm
-       INT 21H
-    ret
-    ;     receiveByte  recevieinvition    
-    ;  compare: cmp recevieinvition,ah
-    ;     je excute
-       
-    ;   readagian:  readKey   
-    ;    cmp recevieinvition,1h
-    ;     jnz compare
-    ;   label12:  mov sentinvitation,ah
-    ;             sendByte ah
-    ;            jz excute
-
-    ;   excute:
-    ;       cmp ah, 3Bh                       ;scancode for F1
-    ;         JZ  Chat
-    ;         cmp ah, 3Ch                       ;scanecode for F2
-    ;         JZ TheGame
-    ;         cmp al, 1Bh                       ;asscii code for ESC
-    ;         Jz ExitGame
-    ;         jmp  readagian
-           
-
-    ;  readagain  :readKey 
-    ;     receiveByte  recevieinvition    
-    ;     cmp recevieinvition,ah
-    ;     jz excute
-    ;     mov sentinvitation,ah
-    ;     sendByte ah
-    ;     jmp checkmykey
-    ;     hgbrab:receiveByte  recevieinvition   ;; receive 
-    ;     cmp recevieinvition,3ch ;  recevie f2
-    ;     jnz readagain
-    ;     readtani:readKey
-    ;     cmp ah,recevieinvition
-    ;     jnz readtani
-    ;     jmp  checkmykey
-      
-    ;     bra: 
-    ;     jmp thegame 
-    ;     bra2:
-    ;     jmp Chat
-  
-            
-    TheGame:                        ;start the game
+    ExitGame:
+        sendByte 'E'                        ;Send E, if E was received at the other party then quit (Check leaveGame)
+        blankScreen 0,0,79                  ;Prints Quit Message, then quits.
+        setTextCursor 0,1
+        print byeMsg
+        setTextCursor 0,3
+        return
+    
+    TheGame:                         
+        sendByte 'G'                 ;Send G, if G was received by the other party then check if they would like accept the invitation
+        setTextCursor 4,22
         Print sendGameMSG
         Print playerName2+2
-        readKey
+        ReceiveByteG Ch              ; If the other party accepted the invitation then print a message, set a flag, wait for a key then go to the game.
+        cmp Ch, 'G'
+        JNE declineinvitation        ;Otherwise print an invitation declined message with both staying in the main menu afterwards.
+        ;Invitation Accepted:
+     
+            readKey
+        mov isMain, 1h               ;Invitation Sender flag
         Call GameProc
         return
     CHAT:
+        sendByte 'C'                   ;Flag for sent chat invitation
+        setTextCursor 4,22
         Print sendChatMSG
         Print playerName2+2
-        readKey
-        Call MAINChAT
+        ReceiveByteG Ch                ;Send C, if C was received by the other party then check if they would like accept the invitation
+        cmp Ch, 'C'                    ; If the other party accepted the invitation then print a message,  wait for a key then go to chat.
+        JNE declineInvitation          ;Otherwise print an invitation declined message with both staying in the main menu afterwards.
+        ;Invitation Accepted :
+       
+
+            readKey
+        Call mainChat
         return
-    ExitGame: 
+
+    declineInvitation:
+
+        print invitationDeclinedMSG           ;Invitation Declined
+        jmp getDecision
+
+    checkTheOtherPlayer:                      ;Byte received, depending on what it is we should print an invitation.
+     receiveByte ah
+            cmp ah, 'C'                       ;scancode for F1
+            JZ  Chatinv
+            cmp ah, 'G'                       ;scancode for F2
+            JZ TheGameinv
+            cmp ah, 'E'                      ;scancode for ESC
+            Jz leaveGame
+            jmp getDecision                   ;The byte sent was not an action key
+
+    ;Receiving Block:
+    leaveGame:  
+        jmp exitgame
+        
+    TheGameInv:                     ;start the game.
+        mov bl,0Fh                  ;Flag for declining the invitation. 
+        setTextCursor 4,22
+            Print receiveGameMSG
+            Print playerName2+2
+            setTextCursor 4,23
+            print invitationPromptforgame
+            readkey
+        cmp ah, 3ch                   ;Check if space bar was pressed.
+        jne sendAnswer               ;bl has the value corresponding to whether the invitation was accepted or not.
+        mov bl,'G'                   ;So if we accept we send G, and start the game.
+            sendByte bl
+            Call GameProc
+            return
+        sendAnswer:                  ;Otherwise if not accepted send the decline flag
+            sendbyte bl
+            jmp getDecision
+    
+    ChatInv:
+        mov bl,0Fh                  ;Flag for declining the invitation. 
+        setTextCursor 4,22
+            Print receiveChatMSG
+            Print playerName2+2
+            setTextCursor 4,23
+            print invitationPromptforchat
+            readkey
+        cmp ah,3bh                    ;Check if space bar was pressed.
+        jne sendResponse              ;bl has the value corresponding to whether the invitation was accepted or not.
+        mov bl,'C'                   ;So if we accept we send C, and start the chat.
+            sendByte bl
+            call mainChat 
+            return 
+        sendResponse:                ;Otherwise send the flag
+            sendbyte bl
+            jmp getDecision
+
     ret 
     menuNavigation endp
-
 
 
  GenerateBallsWithtime PROC near                ;Need comments
@@ -463,44 +412,14 @@ checkDestroyedCount proc near
     Endd:
     ret
 checkDestroyedCount endp
-; sendmyname proc near
-;   mov cl,UserName+1
-;   mov ch,0
-;   mov si,offset UserName+2
-
-;   sendstring:
-;     mov al,[si]
-;      sendByte al
-;      inc si
-;      dec cx
-;      cmp cx,0
-;      jnz sendstring
-;      sendByte 2ah
-;      ret
-
-; sendmyname endp
-; receviemyname proc near
-;   mov si,offset playerName2+2
-;   receviestring:
-;      receiveByte al
-;      cmp al,0ffh
-;      jz receviestring
-;       cmp al,2ah
-;       jz outofrec
-;       mov [si],al
-;      inc si
-;      jmp  receviestring
-;       outofrec:
-;      ret
-     
-; receviemyname endp
-;description
+;Algorithm: 
 sendandreceivename PROC near
       mov si,offset UserName+2
       mov di,offset playerName2+2
       mov cl, userName+1
       mov ch,0
      AGAIN1: 
+        mov dx , 3FDH ; Line Status Register
         In al , dx ;Read Line Status , A byte is input into AL from the port addressed by DX
         test al , 00100000b  ;test: AND without changing values
         JZ Recivestring ;Not empty (This line may need to change)
@@ -511,38 +430,32 @@ sendandreceivename PROC near
         out dx , al
         inc si
         dec cx
-    
         jmp Recivestring
-
     ;Receiving a value
     ;Check that Data is Ready
-    flagstring:
+     flagstring:
        mov dx,3f8h
-       mov al,2ah
+       mov al,0ffh
       out dx , al
       mov myflag,0h
-
     Recivestring:
-  
-    mov dx , 3FDH ; Line Status Register
-    CHK1: in al , dx
+        mov dx , 3FDH ; Line Status Register
+        in al , dx
         test al , 1
         JZ  AGAIN1
         mov dx , 03F8H
         in al , dx
-        cmp al,2ah
+        cmp al,0ffh
         jz checkmyflag
         mov [di],al
         inc di
-        JMP AGAIN1
+        JMP  AGAIN1 
 
-    checkmyflag:  cmp myflag,0H
+    checkmyflag: cmp myflag,0H
              jnz    AGAIN1   
         ret
     
 sendandreceivename ENDP
-;Algorithm: 
-
 
 
  ;Procedures relating to motion and collisions
@@ -940,12 +853,12 @@ checkLeftShieldImpact proc near ;deals with wave collisions
         cmp bx, 50
         JL drawRed                                  ;in case less than 50, draw make the hp bar red.
         drawHealthBar  40,  1,  49,  1,  bx         ;Takes x, y, color, height, width
-        jmp checkTheOtherPlayer
+        jmp checkTheOtherParty
         drawRed:
             drawHealthBar  40,  1,  41,  1,  bx
             ;mov colorshieldleft, 41                 ;change the shield color for the winning player.
             ;mov colorShieldRight, 0eh
-        checkTheOtherPlayer:                                  ;Otherwise do the same check for the other health bar, note that bx has the actual score and bp has the starting position
+        checkTheOtherParty:                                  ;Otherwise do the same check for the other health bar, note that bx has the actual score and bp has the starting position
             mov bl,  ScoreRight
             mov bh, 0
             mov bp, 280
@@ -1018,12 +931,9 @@ gameOverScreen proc near
     jmp near ptr Start
     ret
     gameOverScreen endp
-   
-   
+
 
 END MAIN 
-
-
 
 ;Dynamic Collisions:
 ;Axis alligned bounding box collision: Can be done when The two colliding objects have their axes alligned with each other.

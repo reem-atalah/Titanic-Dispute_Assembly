@@ -29,7 +29,7 @@ mov ds,ax
 
 setBaudRate 00h, 03h
 setProtocol 00011011b
-videoMode 03h
+videoMode 01h
 CALL clearAllscreen
 CALL DispalyPlayerName
 

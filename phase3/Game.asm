@@ -118,7 +118,7 @@
     mov ax, @Data
     mov DS, ax
     TheBeginning:                               ;The screen at the very start of the game.
-        setBaudRate 00h, 03h
+        setBaudRate 00h, 01h
         setProtocol 00011011b
         videoMode 13h                           ;https://stanislavs.org/helppc/int_10.html click on set video modes for all modes
         blankScreen 0h, 0, 4fh
@@ -127,7 +127,7 @@
         blankScreen 0h, 0, 0
         Logo 30, 30
         call inputValidation
-        call sendandreceivename
+        call nameExchange
         setTextCursor 5,23
         Print requestKeyMSG                     ;show message of continue 
         blankScreen 0h, 0, 0 
@@ -321,7 +321,6 @@ MAIN ENDP
         JZ pnoKeyPressed1                                     ;No key was pressed, check if any
             readKey
             sendByte ah
-     
             call rightShieldControl                          
             pnoKeyPressed1:
                 receiveByte ah
@@ -329,7 +328,7 @@ MAIN ENDP
                 je pItsAFK2
                 cmp ah, 3bh
                 je pchatLoop
-                cmp ah,3eh
+                cmp ah, 3eh
                 je EXITOFSCORE
                 call leftShieldControl
                 pItsAFK2:
@@ -339,12 +338,11 @@ MAIN ENDP
             call inGameChat
             jmp pinitialTime
             EXITOFSCORE:
-                 MOV     CX, 004CH
+                MOV     CX, 004CH
                 MOV     DX, 4B40H
                 MOV     AH, 86H
                 INT     15H
                 call gameOverScreennocmp
-               
             jmp pInitialTime
     videoMode 03h ;Text mode. 
     return
@@ -547,87 +545,22 @@ checkDestroyedCount proc near
 checkDestroyedCount endp
 ;Algorithm: 
 
-sendandreceivename PROC near
-       mov si,offset UserName+2
-      mov di,offset playerName2+2
-      mov cl, userName+1
-      mov ch,0
-     
-     AGAIN1: 
-       mov dx , 3FDH ; Line Status Register
-        In al , dx ;Read Line Status , A byte is input into AL from the port addressed by DX
-        test al , 00100000b  ;test: AND without changing values
-        JZ Recivestring ;Not empty (This line may need to change)
-        cmp cx,0 ;If empty put the VALUE in Transmit data register
-        jz flagstring
-        mov dx , 3F8H ; Transmit data register
-        mov al,[si]
-        out dx , al
-        inc si
-        dec cx
-        jmp Recivestring
-    ;Receiving a value
-    ;Check that Data is Ready
-     flagstring:
-       mov dx,3f8h
-       mov al,0ffh
-      out dx , al
-      mov myflag,0h
-    Recivestring:
-        mov dx , 3FDH ; Line Status Register
-        in al , dx
-        test al , 1
-        JZ  AGAIN1
-        mov dx , 03F8H
-        in al , dx
-        cmp al,0ffh
-        jz checkmyflag
-        mov [di],al
-        inc di
-        JMP  AGAIN1 
 
-    checkmyflag: cmp myflag,0H
-             jnz    AGAIN1  
-        ret
-    
-sendandreceivename ENDP
-
-sendandreceivenametani PROC near
+nameExchange PROC near
       mov si,offset UserName+2
       mov di,offset playerName2+2
-      mov cl, userName+1
-      mov ch,0
-     Recivestring1:
-        mov dx , 3FDH ; Line Status Register
-        in al , dx
-        test al , 1
-        JZ  Recivestring1
-        mov dx , 03F8H
-        in al , dx
-        cmp al,0ffh
-        jz AGAIN2
-        mov [di],al
+      mov cx , 15
+     Communicate:
+     Send: 
+      sendByte [SI]
+      inc si
+    Recieve:
+        receiveByteG [DI]
         inc di
-        JMP  Recivestring1 
-     AGAIN2: 
-        mov dx , 3FDH ; Line Status Register
-        In al , dx ;Read Line Status , A byte is input into AL from the port addressed by DX
-        test al , 00100000b  ;test: AND without changing values
-        JZ AGAIN2 ;Not empty (This line may need to change)
-        cmp cx,0 ;If empty put the VALUE in Transmit data register
-        jz checkmyflag1
-        mov dx , 3F8H ; Transmit data register
-        mov al,[si]
-        out dx , al
-        inc si
-        dec cx
-        jmp AGAIN2
-  
-
-    checkmyflag1:   
+    loop  Communicate 
         ret
-    
-sendandreceivenametani ENDP
+nameExchange ENDP
+
 
 
 

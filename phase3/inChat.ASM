@@ -34,7 +34,7 @@ mov ds,ax
     mov rowOut, 19
     mov ah, 22
     mov rowIn, 22
-setBaudRate 00h, 03h
+setBaudRate 00h, 01h
 setProtocol 00011011b
 
 CALL clearAllscreen

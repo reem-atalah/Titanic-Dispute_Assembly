@@ -182,20 +182,20 @@ DispalyPlayerName proc
     MOV  AH, 2     ;SERVICE TO SET CURSOR POSITION.
     MOV  BH, 0     ;PAGE NUMBER.
     INT  10H       ;BIOS SCREEN SERVICES.
-    Print userName+2
+    Print userName
     MOV  DL, 00h    ;SCREEN COLUMN.
     MOV  DH, 12    ;SCREEN ROW.
     MOV  AH, 2     ;SERVICE TO SET CURSOR POSITION.
     MOV  BH, 0     ;PAGE NUMBER.
     INT  10H       ;BIOS SCREEN SERVICES.
-    Print playerName2+2
+    Print playerName2
     MOV  DL, 00h    ;SCREEN COLUMN.
     MOV  DH, 24    ;SCREEN ROW.
     MOV  AH, 2     ;SERVICE TO SET CURSOR POSITION.
     MOV  BH, 0     ;PAGE NUMBER.
     INT  10H       ;BIOS SCREEN SERVICES.
     Print exitMessage1
-    Print  playerName2+2
+    Print  playerName2
     Print exitMessage2
     
 ret
@@ -224,36 +224,36 @@ mov ds,ax
 ;Initialize baud rate
 
 ;Set Divisor Latch Access Bit
-; mov dx,3fbh ; Line Control Register
-; mov al,10000000b ;Set Divisor Latch Access Bit
-; out dx,al ;Out it
+mov dx,3fbh ; Line Control Register
+mov al,10000000b ;Set Divisor Latch Access Bit
+out dx,al ;Out it
 
 
-; ;Set LSB byte of the Baud Rate Divisor Latch register.
-; mov dx,3f8h
-; mov al,0ch          ;configuration of LSB line			
-; out dx,al           ;remember: dx, holds line address, then we
-;                     ; put al inside the address dx points to.
+;Set LSB byte of the Baud Rate Divisor Latch register.
+mov dx,3f8h
+mov al,03h          ;configuration of LSB line			
+out dx,al           ;remember: dx, holds line address, then we
+                    ; put al inside the address dx points to.
 
 
-; ;Set MSB byte of the Baud Rate Divisor Latch register.
-; mov dx,3f9h
-; mov al,00h      ;configuration of MSB line, we must put it as there may be garbage.
-; out dx,al       
+;Set MSB byte of the Baud Rate Divisor Latch register.
+mov dx,3f9h
+mov al,00h      ;configuration of MSB line, we must put it as there may be garbage.
+out dx,al       
 
-; ;Set port configuration
-; mov dx,3fbh
-; mov al,00011011b
-; ; 0:Access to Receiver buffer, Transmitter buffer
-; ; 0:Set Break disabled
-; ; 011:Even Parity
-; ; 0:One Stop Bit
-; ; 11:8bits
-; out dx,al
+;Set port configuration
+mov dx,3fbh
+mov al,00011011b
+; 0:Access to Receiver buffer, Transmitter buffer
+; 0:Set Break disabled
+; 011:Even Parity
+; 0:One Stop Bit
+; 11:8bits
+out dx,al
 
 ;CALL clearfrist
 ;CALL clearsecond
- videoMode 03h
+videoMode 03h
 CALL clearAllscreen
 CALL DispalyPlayerName
 

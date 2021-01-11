@@ -93,8 +93,8 @@
     sendGameMSG db "you sent a game invitation to ", '$'
     receiveChatMSG db "you received a chat invitation from ", '$'
     receiveGameMSG db "you received a game invitation from ", '$'
-    invitationPromptforgame db " Press F2 to Accept game", '$'           
-    invitationPromptforchat db " Press F1 to Accept chat", '$'          
+    invitationPromptgame db " Press F2 to Accept", '$'           ;Scan code is 39
+    invitationPromptchat db " Press F1 to Accept", '$'           ;Scan code is 39
     requestKeyMSG db "PLease Enter Any Key To continue", '$'
     MSGFrist db "PLease Try Again with Letter in Frist,  Press any Key To continue", '$'
     MSGLong db "PLease Try Again with shoter name,  Press any Key To continue", '$'
@@ -107,15 +107,16 @@
     Wins db ' has earned victory ^_^', '$'
     quitGame db 'Press any key to go the main menu', '$'
     isMain db 0                 ;1 Means I'm who sent the invitation and vice versa for 0.
-   level db ? 
-   myflag db 1h
+    myflag db 1h
+    level db ? 
+
 
 .Code
     MAIN PROC FAR 
     mov ax, @Data
     mov DS, ax
     TheBeginning:                               ;The screen at the very start of the game.
-        setBaudRate 00h, 0ch
+        setBaudRate 00h, 03h
         setProtocol 00011011b
         videoMode 13h                           ;https://stanislavs.org/helppc/int_10.html click on set video modes for all modes
         blankScreen 0h, 0, 4fh
@@ -124,7 +125,7 @@
         blankScreen 0h, 0, 0
         Logo 30, 30
         call inputValidation
-        CALL sendandreceivename
+        call sendandreceivename
         setTextCursor 5,23
         Print requestKeyMSG                     ;show message of continue 
         blankScreen 0h, 0, 0 
@@ -133,13 +134,13 @@
         Logo 30, 30
         Start:
         call menuNavigation                   ;The main menu
+     
  videoMode 03h ;Text mode.
 return
 MAIN ENDP 
 
 
-;username exchange
-;; f2 twice?????
+;Level selection, username exchange, space-bar, fixing printing issues, stop random
 ;In-game chatting
 ;Procedures relating to graphics:
    GameProc proc near
@@ -150,23 +151,30 @@ MAIN ENDP
    y:levelSelection
    jmp done
     notchoice:
-    receiveByte level
+    videoMode 13h
+    blankScreen 104, 0, 4fh                                ;while centisecond hasn't passed yet
+    staticShipLeft 10, 320
+    staticShipRight 10, 286 
+      
+   notchoice2: receiveByte level
     cmp level,02
     Jz LevelTwo1
     cmp level,01
-    jnz notchoice
+    jnz notchoice2
     LevelOne1:
         timeToSwap Wv_y, Wv_x, 14
         timeToSwap Ve_x,V_x, 12
         timeToCopy V_x, Vx, 12
         timeToSwap positionThreshold, PositionLowerBound, 2
-     LevelTwo1: 
-   done:                                                           ;Default is level two, for level one we do necessary swapping first
+     LevelTwo1:
+       
+   done:                  ;Default is level two, for level one we do necessary swapping first
    videoMode 13h
    initialtime:
     getCurrentMinute                                        ;Will be used to periodically shoot cannons, current minute is put in cl
     blankScreen 104, 0, 4fh
-    whileTime:                                              ;while centisecond hasn't passed yet
+    whileTime: 
+                                               ;while centisecond hasn't passed yet
         staticShipLeft 10, 320
         staticShipRight 10, 286 
         checkTimePassed Centiseconds
@@ -198,7 +206,7 @@ MAIN ENDP
                 ItsAFK:
                 call gameOverScreen                                 
             jmp whileTime
-     rightrecevie:        
+        rightrecevie:        
         getKeyboardStatus
         JZ noKeyPressed1                                     ;No key was pressed, check if any
             readKey
@@ -212,7 +220,6 @@ MAIN ENDP
                 ItsAFK2:
                 call gameOverScreen                                             
             jmp whileTime
-           
     videoMode 03h ;Text mode. 
     return
    GameProc ENDP 
@@ -258,7 +265,8 @@ menuNavigation proc near
         setTextCursor 0,3
         return
     
-    TheGame:                         
+    TheGame:   
+                       
         sendByte 'G'                 ;Send G, if G was received by the other party then check if they would like accept the invitation
         setTextCursor 4,22
         Print sendGameMSG
@@ -267,22 +275,23 @@ menuNavigation proc near
         cmp Ch, 'G'
         JNE declineinvitation        ;Otherwise print an invitation declined message with both staying in the main menu afterwards.
         ;Invitation Accepted:
-     
-            readKey
+        
+        readKey
         mov isMain, 1h               ;Invitation Sender flag
         Call GameProc
+      
         return
     CHAT:
+       
         sendByte 'C'                   ;Flag for sent chat invitation
         setTextCursor 4,22
         Print sendChatMSG
-        Print playerName2+2
+         Print playerName2+2
         ReceiveByteG Ch                ;Send C, if C was received by the other party then check if they would like accept the invitation
         cmp Ch, 'C'                    ; If the other party accepted the invitation then print a message,  wait for a key then go to chat.
         JNE declineInvitation          ;Otherwise print an invitation declined message with both staying in the main menu afterwards.
         ;Invitation Accepted :
-       
-
+        
             readKey
         Call mainChat
         return
@@ -293,7 +302,7 @@ menuNavigation proc near
         jmp getDecision
 
     checkTheOtherPlayer:                      ;Byte received, depending on what it is we should print an invitation.
-     receiveByte ah
+     receiveByte ah   
             cmp ah, 'C'                       ;scancode for F1
             JZ  Chatinv
             cmp ah, 'G'                       ;scancode for F2
@@ -306,18 +315,20 @@ menuNavigation proc near
     leaveGame:  
         jmp exitgame
         
-    TheGameInv:                     ;start the game.
+    TheGameInv: 
+                        ;start the game.
         mov bl,0Fh                  ;Flag for declining the invitation. 
         setTextCursor 4,22
             Print receiveGameMSG
             Print playerName2+2
             setTextCursor 4,23
-            print invitationPromptforgame
+            print invitationPromptgame
             readkey
-        cmp ah, 3ch                   ;Check if space bar was pressed.
+        cmp ah, 3Ch                   ;Check if space bar was pressed.;scan code F2
         jne sendAnswer               ;bl has the value corresponding to whether the invitation was accepted or not.
         mov bl,'G'                   ;So if we accept we send G, and start the game.
             sendByte bl
+          
             Call GameProc
             return
         sendAnswer:                  ;Otherwise if not accepted send the decline flag
@@ -325,17 +336,19 @@ menuNavigation proc near
             jmp getDecision
     
     ChatInv:
+     
         mov bl,0Fh                  ;Flag for declining the invitation. 
         setTextCursor 4,22
             Print receiveChatMSG
             Print playerName2+2
             setTextCursor 4,23
-            print invitationPromptforchat
+            print invitationPromptchat
             readkey
-        cmp ah,3bh                    ;Check if space bar was pressed.
+        cmp ah,3Bh                    ;Check if space bar was pressed; scane code F1
         jne sendResponse              ;bl has the value corresponding to whether the invitation was accepted or not.
         mov bl,'C'                   ;So if we accept we send C, and start the chat.
             sendByte bl
+           
             call mainChat 
             return 
         sendResponse:                ;Otherwise send the flag
@@ -390,7 +403,7 @@ checkDestroyedCount proc near
         mov ax, 2h
         sub destroyedCount, ax
 
-        mov bx, 0h
+        mov bx, 00h                    ;cx
         mov ax, Sy+bx                 ;get random value from array Sy
         mov bx, currentBallIndex  
         mov S_y+bx, ax                 ;but it in our original array!
@@ -413,17 +426,19 @@ checkDestroyedCount proc near
     ret
 checkDestroyedCount endp
 ;Algorithm: 
+
 sendandreceivename PROC near
-      mov si,offset UserName+2
+       mov si,offset UserName+2
       mov di,offset playerName2+2
       mov cl, userName+1
       mov ch,0
+     
      AGAIN1: 
-        mov dx , 3FDH ; Line Status Register
+       mov dx , 3FDH ; Line Status Register
         In al , dx ;Read Line Status , A byte is input into AL from the port addressed by DX
         test al , 00100000b  ;test: AND without changing values
         JZ Recivestring ;Not empty (This line may need to change)
-       cmp cx,0 ;If empty put the VALUE in Transmit data register
+        cmp cx,0 ;If empty put the VALUE in Transmit data register
         jz flagstring
         mov dx , 3F8H ; Transmit data register
         mov al,[si]
@@ -456,6 +471,44 @@ sendandreceivename PROC near
         ret
     
 sendandreceivename ENDP
+sendandreceivenametani PROC near
+      mov si,offset UserName+2
+      mov di,offset playerName2+2
+      mov cl, userName+1
+      mov ch,0
+     Recivestring1:
+        mov dx , 3FDH ; Line Status Register
+        in al , dx
+        test al , 1
+        JZ  Recivestring1
+        mov dx , 03F8H
+        in al , dx
+        cmp al,0ffh
+        jz AGAIN2
+        mov [di],al
+        inc di
+        JMP  Recivestring1 
+     AGAIN2: 
+        mov dx , 3FDH ; Line Status Register
+        In al , dx ;Read Line Status , A byte is input into AL from the port addressed by DX
+        test al , 00100000b  ;test: AND without changing values
+        JZ AGAIN2 ;Not empty (This line may need to change)
+        cmp cx,0 ;If empty put the VALUE in Transmit data register
+        jz checkmyflag1
+        mov dx , 3F8H ; Transmit data register
+        mov al,[si]
+        out dx , al
+        inc si
+        dec cx
+        jmp AGAIN2
+  
+
+    checkmyflag1:   
+        ret
+    
+sendandreceivenametani ENDP
+
+
 
 
  ;Procedures relating to motion and collisions
@@ -546,9 +599,15 @@ sendandreceivename ENDP
         cmp ax, [bx+S_x]
         JG goOut 
 
-        mov ah, 10                              ;Take 10 down from the ships HP
-        sub scoreRight, ah
-        ret
+        cmp isMain,0h
+        jz acceptscoreR
+        mov al, 10                      ;Take 10 down from the ships HP
+        sub scoreRight, al
+        sendByte ScoreRight
+        jmp goOut
+        acceptscoreR:
+        receiveByteG  ScoreRight
+ 
     goOut:                                      ;Do nothing if none is satisfied
     ret
     checkRightShipCollisions endp
@@ -570,9 +629,14 @@ sendandreceivename ENDP
         add ax, positionThreshold
         cmp  [bx+S_x], ax
         JG timeToLeave
-        
+        cmp isMain,0h
+        jz acceptscore
         mov al, 10                      ;Take 10 down from the ships HP
         sub scoreLeft, al
+        sendByte ScoreLeft
+        jmp  timeToLeave
+       acceptscore:
+        receiveByteG  ScoreLeft
     timeToLeave:                        ;Do nothing if none is satisfied
     ret
     checkLeftShipCollisions endp
@@ -836,6 +900,10 @@ checkLeftShieldImpact proc near ;deals with wave collisions
 	moveBall ENDP
 
     scoreControl proc near
+      cmp isMAIN,0H
+      jnz player1
+      jmp far  ptr exchangename
+      player1:
         setTextCursor 2, 1                       ;Set Cursor for position of destroyedCount
         print Username+2
         setTextCursor 2, 2                       ;Set Cursor for position of leftscore
@@ -844,6 +912,17 @@ checkLeftShieldImpact proc near ;deals with wave collisions
         print playerName2+2
         setTextCursor 33, 2                       ;Set Cursor for position of rightscore
         displayNumber scoreRight                 ;draw rightscore
+        ret
+        exchangename:
+        setTextCursor 2, 1                       ;Set Cursor for position of destroyedCount
+        print playerName2+2
+        setTextCursor 2, 2                       ;Set Cursor for position of leftscore
+        displayNumber scoreleft                  ;draw leftscore
+        setTextCursor 33, 1                       ;Set Cursor for position of rightscore
+        print userName+2
+        setTextCursor 33, 2                       ;Set Cursor for position of rightscore
+        displayNumber scoreRight                 ;draw rightscore
+     ret
     endp scoreControl
 
       showHealth proc near

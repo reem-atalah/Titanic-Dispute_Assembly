@@ -401,7 +401,7 @@
     endm Waves ;endp
     
 
-   levelSelection macro
+    levelSelection macro
         videoMode 13h
         blankScreen 0h, 0, 4fh
         setTextCursor 10, 10                       ;Set Cursor for level one message

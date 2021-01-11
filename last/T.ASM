@@ -23,7 +23,8 @@
         extrn drawShieldRight: far
         extrn dynamicWave: far
         extrn MAINChAT:far
-        public V_x, colorBall, colorShieldLeft, colorShieldRight, S_y, S_x, Pl_y, Pr_x, Pl_x, Pr_y, currentBallindex, W_y, W_x,UserName,playerName2
+        extrn inGameChat: far
+        public V_x, colorBall, colorShieldLeft, colorShieldRight, S_y, S_x, Pl_y, Pr_x, Pl_x, Pr_y, currentBallindex, W_y, W_x,UserName,playerName2,menuNavigation
 ;____________________________________________________________________________________________________________________
 ;Let the code beign.
 
@@ -109,7 +110,8 @@
     isMain db 0                 ;1 Means I'm who sent the invitation and vice versa for 0.
     myflag db 1h
     level db ? 
-
+    levelMSG1 db 'He selected level 1','$'
+    levelMSG2 db 'He selected level 2','$'
 
 .Code
     MAIN PROC FAR 
@@ -143,38 +145,19 @@ MAIN ENDP
 ;Level selection, username exchange, space-bar, fixing printing issues, stop random
 ;In-game chatting
 ;Procedures relating to graphics:
-   GameProc proc near
-    cmp  isMain,0h
-    jz x
-   jmp y
-   x:Jmp notchoice
-   y:levelSelection
-   jmp done
-    notchoice:
-    videoMode 13h
-    blankScreen 104, 0, 4fh                                ;while centisecond hasn't passed yet
-    staticShipLeft 10, 320
-    staticShipRight 10, 286 
-      
-   notchoice2: receiveByte level
-    cmp level,02
-    Jz LevelTwo1
-    cmp level,01
-    jnz notchoice2
-    LevelOne1:
-        timeToSwap Wv_y, Wv_x, 14
-        timeToSwap Ve_x,V_x, 12
-        timeToCopy V_x, Vx, 12
-        timeToSwap positionThreshold, PositionLowerBound, 2
-     LevelTwo1:
-       
-   done:                  ;Default is level two, for level one we do necessary swapping first
+   GameProcSend proc near   
+        levelSelection
+           MOV     CX, 004CH
+            MOV     DX, 4B40H
+            MOV     AH, 86H
+            INT     15H
+     ;Default is level two, for level one we do necessary swapping first
    videoMode 13h
    initialtime:
     getCurrentMinute                                        ;Will be used to periodically shoot cannons, current minute is put in cl
     blankScreen 104, 0, 4fh
     whileTime: 
-                                               ;while centisecond hasn't passed yet
+        ;while centisecond hasn't passed yet
         staticShipLeft 10, 320
         staticShipRight 10, 286 
         checkTimePassed Centiseconds
@@ -191,38 +174,136 @@ MAIN ENDP
         call scoreControl                                   ;Control the score
         dynamicBalls                                        ;Responsible for drawing and maintaining ball movement
        ;Controlling objects in the game.   
-        cmp  isMain,0h
-        jz rightrecevie  
+        ;cmp  isMain,0h
+        ;jz rightrecevie  
         getKeyboardStatus
         JZ noKeyPressed                                     ;No key was pressed, check if any
             readKey
             sendByte ah
-            call leftShieldControl                          
+            cmp ah, 3bh
+            je chatLoop
+            cmp ah,3Eh
+            je EXITSCORES
+            call rightShieldControl                          
             noKeyPressed:
                 receiveByte ah
                 cmp ah, 0ffh
                 je ItsAFK
-                call rightShieldControl
-                ItsAFK:
-                call gameOverScreen                                 
-            jmp whileTime
-        rightrecevie:        
-        getKeyboardStatus
-        JZ noKeyPressed1                                     ;No key was pressed, check if any
-            readKey
-            sendByte ah
-            call rightShieldControl                          
-            noKeyPressed1:
-                receiveByte ah
-                cmp ah, 0ffh
-                je ItsAFK2
+                cmp ah, 3bh
+                je chatLoop
+                cmp ah,3Eh
+                je EXITSCORES
                 call leftShieldControl
-                ItsAFK2:
-                call gameOverScreen                                             
+                ItsAFK:
+                call gameOverScreen                                                                          
             jmp whileTime
+            chatLoop:
+            call inGameChat
+            EXITSCORES:
+                 MOV     CX, 004CH
+                MOV     DX, 4B40H
+                MOV     AH, 86H
+                INT     15H
+                call gameOverScreennocmp
+            jmp initialTime
     videoMode 03h ;Text mode. 
     return
-   GameProc ENDP 
+   GameProcSend ENDP 
+
+   GameProcReceive proc near
+
+    pScreenContent:
+        videoMode 13h
+        blankScreen 104, 0, 4fh                                ;while centisecond hasn't passed yet
+        staticShipLeft 10, 320
+        staticShipRight 10, 286 
+      
+   pKeepWaiting: 
+   receiveByte level
+        cmp level,02
+        Jz LevelTwo1
+        cmp level,01
+        jnz pkeepWaiting
+    LevelOne1:
+        timeToSwap Wv_y, Wv_x, 14
+        timeToSwap Ve_x,V_x, 12
+        timeToCopy V_x, Vx, 12
+        timeToSwap positionThreshold, PositionLowerBound, 2
+     LevelTwo1:
+     cmp Level,02
+     jz levelmsg
+        print  levelMSG1
+           MOV     CX, 004CH
+            MOV     DX, 4B40H
+            MOV     AH, 86H
+            INT     15H
+        jmp  pLevelSelectionDone
+        levelmsg:
+        print  levelMSG2
+   MOV     CX, 004CH
+   MOV     DX, 4B40H
+   MOV     AH, 86H
+  INT     15H
+       
+   pLevelSelectionDone:                                      ;Default is level two, for level one we do necessary swapping first
+   videoMode 13h
+   pInitialtime:
+    getCurrentMinute                                        ;Will be used to periodically shoot cannons, current minute is put in cl
+    blankScreen 104, 0, 4fh
+    pWhileTime: 
+        ;while centisecond hasn't passed yet
+        staticShipLeft 10, 320
+        staticShipRight 10, 286 
+        checkTimePassed Centiseconds
+    JE pWhileTime                                             ;if a centisecond passes (won't be triggered for any less time)
+        setTextCursor 10, 2                                  ;Set Cursor for position of leftscore
+        ;displayNumber Minutes
+        mov Centiseconds, dl                                ;centisecond(s) has passed update the time variable with the new time.
+        call generateBallsWithTime
+        blankScreen 104, 4, 35                              ;Color,  from,  to (on the x-axis)
+        Waves                                               ;repeated calls to static waves
+        call drawShieldLeft                                 ;Draw left shield
+        call drawShieldRight                                ;Draw right shield
+        call showHealth
+        call scoreControl                                   ;Control the score
+        dynamicBalls                                        ;Responsible for drawing and maintaining ball movement
+       ;Controlling objects in the game.   
+        ;cmp  isMain,0h
+        ;jz rightrecevie  
+        getKeyboardStatus
+        JZ pNoKeyPressed                                     ;No key was pressed, check if any
+            readKey
+            sendByte ah
+            cmp ah, 3bh
+            je pChatLoop
+            cmp ah,3Eh
+            je EXITOFSCORE
+            call leftShieldControl                          
+            pNoKeyPressed:
+                receiveByte ah
+                cmp ah, 0ffh
+                je pItsAFK
+                cmp ah, 3bh
+                je pChatLoop
+                cmp ah,3Eh
+                je EXITOFSCORE
+                call rightShieldControl
+                pItsAFK:
+                call gameOverScreen                                                                          
+            jmp pWhileTime
+            pChatLoop:
+            call inGameChat
+            EXITOFSCORE:
+                 MOV     CX, 004CH
+                MOV     DX, 4B40H
+                MOV     AH, 86H
+                INT     15H
+                call gameOverScreennocmp
+               
+            jmp pInitialTime
+    videoMode 03h ;Text mode. 
+    return
+   GameProcReceive ENDP 
 
 rightShieldControl proc near
         shieldControlSecond Pl_y, 4Dh,4Bh                   ;33h,34h        ;control Pl_y up and down with a, s ;< >
@@ -236,7 +317,6 @@ endp leftShieldControl
 ;description
 menuNavigation proc near  
         blankScreen 0h, 0, 4fh                  ;Blank the whole screen for the main menu 
-
         getDecision:
         notificationBar 07, 15h, 18h            ;draw notification bar
         setTextCursor 8,5
@@ -275,10 +355,8 @@ menuNavigation proc near
         cmp Ch, 'G'
         JNE declineinvitation        ;Otherwise print an invitation declined message with both staying in the main menu afterwards.
         ;Invitation Accepted:
-        
-        readKey
         mov isMain, 1h               ;Invitation Sender flag
-        Call GameProc
+        Call GameProcSend
       
         return
     CHAT:
@@ -286,12 +364,11 @@ menuNavigation proc near
         sendByte 'C'                   ;Flag for sent chat invitation
         setTextCursor 4,22
         Print sendChatMSG
-         Print playerName2+2
+        Print playerName2+2
         ReceiveByteG Ch                ;Send C, if C was received by the other party then check if they would like accept the invitation
         cmp Ch, 'C'                    ; If the other party accepted the invitation then print a message,  wait for a key then go to chat.
         JNE declineInvitation          ;Otherwise print an invitation declined message with both staying in the main menu afterwards.
         ;Invitation Accepted :
-        
             readKey
         Call mainChat
         return
@@ -328,8 +405,7 @@ menuNavigation proc near
         jne sendAnswer               ;bl has the value corresponding to whether the invitation was accepted or not.
         mov bl,'G'                   ;So if we accept we send G, and start the game.
             sendByte bl
-          
-            Call GameProc
+            Call GameProcReceive
             return
         sendAnswer:                  ;Otherwise if not accepted send the decline flag
             sendbyte bl
@@ -348,7 +424,6 @@ menuNavigation proc near
         jne sendResponse              ;bl has the value corresponding to whether the invitation was accepted or not.
         mov bl,'C'                   ;So if we accept we send C, and start the chat.
             sendByte bl
-           
             call mainChat 
             return 
         sendResponse:                ;Otherwise send the flag
@@ -467,10 +542,11 @@ sendandreceivename PROC near
         JMP  AGAIN1 
 
     checkmyflag: cmp myflag,0H
-             jnz    AGAIN1   
+             jnz    AGAIN1  
         ret
     
 sendandreceivename ENDP
+
 sendandreceivenametani PROC near
       mov si,offset UserName+2
       mov di,offset playerName2+2
@@ -507,7 +583,6 @@ sendandreceivenametani PROC near
         ret
     
 sendandreceivenametani ENDP
-
 
 
 
@@ -995,21 +1070,86 @@ gameOverScreen proc near
     jmp whileTime
     
     quitGameNow:
-    mov al, 100
-    mov scoreLeft, al
-    mov scoreRight, al
-    mov bx,0
-    mov [currentballindex],bx
-    mov destroyedCount,bx
-    ;Reseting the game to the default (level two)
-        timeToSwap Wv_x, Wv_y, 14
-        timeToSwap V_x,Ve_x, 12
-        timeToCopy V_x, Vx, 12
-        timeToSwap positionThreshold, PositionLowerBound, 2
     videoMode 13h
-    jmp near ptr Start
+    print byeMSG
+    return
+    ; mov al, 100
+    ; mov scoreLeft, al
+    ; mov scoreRight, al
+    ; mov bx,0
+    ; mov [currentballindex],bx
+    ; mov destroyedCount,bx
+    ; ;Reseting the game to the default (level two)
+    ;     timeToSwap Wv_x, Wv_y, 14
+    ;     timeToSwap V_x,Ve_x, 12
+    ;     timeToCopy V_x, Vx, 12
+    ;     timeToSwap positionThreshold, PositionLowerBound, 2
+    ; videoMode 13h
+    ; jmp near ptr Start
     ret
     gameOverScreen endp
+    gameOverScreennocmp proc near
+        mov al,scoreLeft
+        cmp scoreRight,al                        ;check if right lost the game
+        JG done2
+        cmp  scoreRight,al
+        jz done1
+        jmp RightPlayerLoses1
+        done1: jmp  far ptr Bridge1
+        done2: jmp far ptr LeftPlayerLoses1
+        RightPlayerLoses1:
+            blankScreen 104, 0, 4fh 
+            setTextCursor 4, 6
+            print Username+2
+            setTextCursor 4, 8
+            print Wins
+            setTextCursor 4, 10
+            print PlayerName2+2
+            setTextCursor 4, 12
+            print Loses        
+            setTextCursor 4, 14
+            Print quitGame
+        readKey                                    ;take any button to quit game
+        jz quitGameNow1
+
+        LeftPlayerLoses1:
+           
+            blankScreen 104, 0, 4fh
+            setTextCursor 4, 6
+            print playerName2+2
+            setTextCursor 4, 8
+            print Wins
+            setTextCursor 4, 10
+            print Username+2
+            setTextCursor 4, 12
+            print Loses
+            setTextCursor 4, 14
+            Print quitGame
+        readKey
+        jz quitGameNow1
+
+    Bridge1:
+    jmp whileTime
+    
+    quitGameNow1:
+    videoMode 13h
+    print byeMSG
+    return
+    ; mov al, 100
+    ; mov scoreLeft, al
+    ; mov scoreRight, al
+    ; mov bx,0
+    ; mov [currentballindex],bx
+    ; mov destroyedCount,bx
+    ; ;Reseting the game to the default (level two)
+    ;     timeToSwap Wv_x, Wv_y, 14
+    ;     timeToSwap V_x,Ve_x, 12
+    ;     timeToCopy V_x, Vx, 12
+    ;     timeToSwap positionThreshold, PositionLowerBound, 2
+    ; videoMode 13h
+    ; jmp near ptr Start
+    ret
+    gameOverScreennocmp endp
 
 
 END MAIN 

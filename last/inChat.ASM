@@ -17,9 +17,9 @@ include TML.asm
         rowOut db 19
         rowIn db 22
     ;Exit notes:
-        leaveNote db "to continue playing with ",'$' 
-        leaveNoteKey db " press F4",'$'
-        exitKey db 3Eh 
+        leaveNote db "to end the chat with ",'$' 
+        leaveNoteKey db " press F1",'$'
+        exitKey db 3bh 
 
 .code 
 
@@ -92,6 +92,7 @@ letActionBegins:
 
     ExitChat: 
     videoMode 13h 
+    
     ret
    
 
@@ -117,12 +118,12 @@ clearsecond endp
 
 DispalyPlayerName proc near
     setTextCursor 0, 18
-    Print userName
+    Print userName+2
     setTextCursor 0, 21
-    Print playerName2
+    Print playerName2+2
     setTextCursor 0,24
     Print leaveNote
-    Print  playerName2
+    Print  playerName2+2
     Print leaveNoteKey
 ret
 DispalyPlayerName endp

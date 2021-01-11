@@ -353,7 +353,8 @@
         mov minutes, cl
     endm getCurrentMinute
 
-    dynamicBalls macro                                                  ;Loops on each ball, draws it and then moves it.
+    dynamicBalls macro     
+    local ballDynamics                                             ;Loops on each ball, draws it and then moves it.
             mov bx, 0h
             ballDynamics:       
                 mov currentBallIndex, bx
@@ -366,6 +367,7 @@
     endm dynamicBalls
 
     Waves macro
+    local waveInAction
     mov bx, 0
         waveInAction:
             call dynamicWave                                            ;Draws the wave

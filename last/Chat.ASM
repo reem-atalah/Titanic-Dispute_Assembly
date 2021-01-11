@@ -1,7 +1,7 @@
 include TML.asm
  extrn UserName:byte
  extrn playerName2:byte
-
+  extrn menuNavigation: far
  public mainChat
 .286
 .MODEL HUGE
@@ -84,7 +84,8 @@ letActionBegins:
     jmp letActionBegins
 
     ExitChat:    
-    videoMode 03h ;Text mode.
+    videoMode 13h ;Text mode.
+    call menuNavigation
     return
 
 
@@ -110,12 +111,12 @@ clearsecond endp
 
 DispalyPlayerName proc near
 setTextCursor 0, 0
-    Print userName
+    Print userName+2
     setTextCursor 0, 12
-    Print playerName2
+    Print playerName2+2
     setTextCursor 0,24
     Print leaveNote
-    Print  playerName2
+    Print  playerName2+2
     Print leaveNoteKey
 ret
 DispalyPlayerName endp

@@ -59,66 +59,21 @@
     endm setTextCursor
 
 
-    checkPause macro
-    local pLoop, tryLater, Accept
-        ;check if p was pressed
-        cmp ah, 19h
-        JNE tryLater
-        pLoop:
-            getKeyboardStatus
-            JZ Accept                       ;No key was pressed
-            readkey                         ;key was pressed
-            cmp ah, 19h
-            jne pLoop                      ;if its not p then keep pausing
-            sendByte 19h
-            jmp tryLater
-        Accept:
-            receiveByte Ch
-            cmp Ch, 19h
-            Jne pLoop
-        tryLater:
-    endm checkPause
-    
-        checkPauseReceive macro
-    local pLoop, tryLater, Accept
-        ;check if p was pressed
-        cmp ah, 19h
-        JNE tryLater
-        pLoop:
-            getKeyboardStatus
-            JZ Accept                       ;No key was pressed
-            readkey                         ;key was pressed
-            cmp ah, 19h
-            jne pLoop                      ;if its not p then keep pausing
-            sendByte 19h
-            jmp tryLater
-        Accept:
-            receiveByte Ch
-            cmp Ch, 19h
-            Jne pLoop
-        tryLater:
-    endm checkPauseReceive
 
-        checkPauseSend macro
-    local pLoop, tryLater, Accept
+
+    checkPause macro
         ;check if p was pressed
         cmp ah, 19h
         JNE tryLater
         pLoop:
             getKeyboardStatus
-            JZ Accept                       ;No key was pressed
+            JZ pLoop                        ;No key was pressed
             readkey                         ;key was pressed
             cmp ah, 19h
-            jne pLoop                      ;if its not p then keep pausing
-            sendByte 19h
-            jmp tryLater
-        Accept:
-            receiveByte Ch
-            cmp Ch, 19h
-            Jne pLoop
+            jne pLoop                       ;if its not p then keep pausing
         tryLater:
-    endm checkPauseSend
-    
+
+    endm checkPause
 
 
     videoMode macro Mode
@@ -168,7 +123,7 @@
 
     drawPixel_implicit macro color                                          ;Assumes that spatial (cx,  dx) parameters are already initialized.
         mov ah, 0ch
-        mov bh, 00h                                                          ;Page no.
+        mov bh, 00h                                                         ;Page no.
         mov al, color
         int 10h
     endm drawPixel_implicit
@@ -398,7 +353,8 @@
         mov minutes, cl
     endm getCurrentMinute
 
-    dynamicBalls macro                                                  ;Loops on each ball, draws it and then moves it.
+    dynamicBalls macro     
+    local ballDynamics                                             ;Loops on each ball, draws it and then moves it.
             mov bx, 0h
             ballDynamics:       
                 mov currentBallIndex, bx
@@ -411,6 +367,7 @@
     endm dynamicBalls
 
     Waves macro
+    local waveInAction
     mov bx, 0
         waveInAction:
             call dynamicWave                                            ;Draws the wave
@@ -474,11 +431,22 @@
             JZ getUserChoice                            ;No key was pressed
             readKey
             cmp ah, 02                                  ;scancode for 1
-            JZ far ptr  LevelOne
+            JZ  LevelOne
             cmp ah, 03                                  ;scanecode for 2
-            JZ far ptr LevelTwo
+            JZ LevelTwo
             jmp getUserChoice
-    endm levelSelection 
+          
+        LevelOne:
+        timeToSwap Wv_y, Wv_x, 14
+        timeToSwap Ve_x,V_x, 12
+        timeToCopy V_x, Vx, 12
+        timeToSwap positionThreshold, PositionLowerBound, 2
+         sendByte 01h
+         jmp outlabel
+      LevelTwo: 
+        sendByte 02h   
+        outlabel:
+     endm levelSelection 
 
     timeToSwap macro List1, List2, len ;Swaps two lists together (so we can choose the correct parameters depending on the level)
         local whileCx

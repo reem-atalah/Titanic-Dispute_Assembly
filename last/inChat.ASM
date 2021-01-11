@@ -2,7 +2,7 @@ include TML.asm
  extrn UserName:byte
  extrn playerName2:byte
 
- public mainChat
+ public inGameChat
 .286
 .MODEL HUGE
 .STACK 64   
@@ -14,22 +14,29 @@ include TML.asm
         columnOut db 0h
         columnIn db 0h
     ;Row cursor positions of the current send and receive characters:
-        rowOut db 1
-        rowIn db 13
+        rowOut db 19
+        rowIn db 22
     ;Exit notes:
-        leaveNote db "to end the chatting with ",'$' 
-        leaveNoteKey db " press F3",'$'
-        exitKey db 3Dh 
+        leaveNote db "to continue playing with ",'$' 
+        leaveNoteKey db " press F4",'$'
+        exitKey db 3Eh 
 
 .code 
 
-mainChat proc far             
+inGameChat proc far             
 mov ax,@data
 mov ds,ax 
-
+;Resetting the cursor position
+    mov ah,0
+    mov columnOut, ah
+    mov columnIn, ah
+    mov ah,19
+    mov rowOut, 19
+    mov ah, 22
+    mov rowIn, 22
 setBaudRate 00h, 03h
 setProtocol 00011011b
-videoMode 03h
+
 CALL clearAllscreen
 CALL DispalyPlayerName
 
@@ -80,38 +87,38 @@ letActionBegins:
         mov byteIn , al
         printCharacter byteIn  ;display the char recived
         call receiverCursorLogic
-
+        
     jmp letActionBegins
 
-    ExitChat:    
-    videoMode 03h ;Text mode.
-    return
+    ExitChat: 
+    videoMode 13h 
+    ret
+   
 
-
-mainChat endp
+inGameChat endp
 
 
 clearAllscreen proc near 
-    clearSection 12, 0, 79, 0, 12, 0    ;Has parameters: color, x1, x2, currentSendRow, currentReceiveRow, scroll
-    clearSection 21, 0, 79, 12, 24, 0
+    clearSection 12, 0, 39, 18, 20, 0    ;Has parameters: color, x1, x2, currentSendRow, currentReceiveRow, scroll
+    clearSection 21, 0, 39, 21, 23, 0
  ret
 clearAllscreen endp
 
-clearfrist proc near
-    clearSection 12, 0, 79, 1, 11, 0    ;Leaving space for the username and the press any key message.
+clearfirst proc near
+    clearSection 12, 0, 39, 19, 20, 0    ;Leaving space for the username and the press any key message.
 ret
-clearfrist endp
+clearfirst endp
 
 clearsecond proc near
-clearSection 21, 0, 79, 13, 23, 0    ;Leaving space for the username and the press any key message.
+clearSection 21, 0, 39, 22, 23, 0    ;Leaving space for the username and the press any key message.
 ret
 clearsecond endp
 
 
 DispalyPlayerName proc near
-setTextCursor 0, 0
+    setTextCursor 0, 18
     Print userName
-    setTextCursor 0, 12
+    setTextCursor 0, 21
     Print playerName2
     setTextCursor 0,24
     Print leaveNote
@@ -123,14 +130,14 @@ DispalyPlayerName endp
 senderCursorLogic proc near 
     inc columnOut                   
     setTextCursor columnOut, rowOut     ;Set the new cursor position
-    cmp columnOut, 79        
+    cmp columnOut, 39        
     jle  timeToSend                     ;If we still aren't at the end of the row, otherwise:
     inc rowOut
     mov columnOut,00h                   ;start a new line, and reset to the first column
-    cmp rowOut,11                       
+    cmp rowOut, 20                       
     jle timeToSend                      ;if we still aren't at the end of the half screen (last row), otherwise:
-    CALL clearfrist                     
-    mov rowOut,1                        ;clear screen and reset row
+    CALL clearfirst                     
+    mov rowOut, 19                        ;clear screen and reset row
     timeToSend:
 ret
 senderCursorLogic endp
@@ -140,16 +147,16 @@ receiverCursorLogic proc near
 
     inc columnIn            
     setTextCursor columnIn, rowIn   ;Now that we've printed a character, set the new cursor position
-    cmp columnIn,79                 
+    cmp columnIn,39                 
     jle Try                         ;If we still aren't at the end of the row, otherwise:
     inc rowIn
     mov columnIn,00h                ;Start a new row and reset the column position
     cmp rowIn, 23                    
     jle Try                         ;If we still haven't reached the end of the screen, otherwise:
     CALL clearsecond                ;Clear the Receive part
-    mov rowIn,13
+    mov rowIn, 22
     Try:
-ret
-receiverCursorLogic endp
+    ret
+    receiverCursorLogic endp
 
-end mainChat
+end inGameChat

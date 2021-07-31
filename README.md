@@ -30,10 +30,10 @@ Two lost ships, at the heart of the Atlantic, seeking the same purpose confront 
 
 <h2 align='center'>🎮 Gameplay 🎮 </h2>
 <div align='center'>
-  <b> Level I - Sunny Day </b> <br>
+   In <b>level I</b> everything is pretty chill and laid back, cannonballs are shot periodically form the two ships.  <br> <br>
    <img  src="/Graphics/Screenshots/L1.gif" title="All rights resrved." width='600' >
   <br>
-  <b> Level II - Sea Storm </b> <br>
+   In <b>level II</b> cannonballs are faster and waves hurt and slow down the shields upon impact.  <br> <br> 
    <img  src="/Graphics/Screenshots/L2.gif" title="All rights resrved." width='600' >
  </div>
  <h2 align='center'>Thank You. 💖 </h2>

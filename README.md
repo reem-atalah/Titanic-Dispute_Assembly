@@ -1,2 +1,40 @@
-# Titanic-Dispute_Assembly
-Two lost ships, at the heart of the Atlantic, seeking the same purpose confront one another and decide that one of them should be destined the fate of the Titanic.  The game starts with the two ships being on each side of the screen, and with both going all-cannons on the other, each ship is acquainted with a black-diamond cannonball-proof shield that can move parallel to the cannons and attempt to dodge and retarget incoming cannonballs to the opposing ship.  Both ships start at full health that then falls off with each incoming cannonball hitting the ship, whenever any gets to zero health, the ship sinks. And the other discovers El Dorado.
+<h1 align='center'>🛳 Titanic Dispute 🛳 </h1>
+<div align='center'>
+   <img  src="/Graphics/Logo.png"  >
+ </div>
+ <h2 align='center'> 🕮 Lore & Background 🕮 </h2>
+<p align='justify'>
+Two lost ships, at the heart of the Atlantic, seeking the same purpose confront one another and decide that one of them should be destined the fate of the Titanic.  The game starts with the two ships being on each side of the screen, and with each going all-cannons on the other, each ship is acquainted with a red-diamond cannonball-proof shield that can move parallel to the cannons in attempt to dodge and retarget incoming cannonballs towards the opposing ship.  Both ships start at full health that then falls off with each incoming cannonball hitting the ship, whenever any gets to zero health, the ship sinks. And the other discovers El Dorado.
+  </p>
+<h2 align='center'>💻 Technologies used 💻 </h2>
+<div align='center'>
+    <p> It's a microprocessors course project, so...</p>
+   <img  src="/Graphics/image.jpg" title="All rights resrved. " >
+ </div>
+ 
+ <h2 align='center'>☑️ Structure & How to Run ☑️ </h2>
+<div align='center'>
+ </div>
+   <p> <h4> Inside Modular Code you should find: </h4>
+   🔵 <b>TML.asm</b> which has all the Macros that we've used (TML for Titanic Macro Library.)
+  <br> 🟢 <b>Chat.asm</b> which is responsible for the chat module.
+  <br> 🟡 <b>Graphics.asm</b> which includes all the graphics (assets) used in the game.
+  <br> 🔴 <b>Game.asm</b> which is the game itself, it uses all three other files.
+  <br>
+  If you're using DOSBOX through VSCODE then simply copy the content of this folder to the extensions workspace (as in the .txt) and that should then run by default, otherwise   you might just use the normal incantation of masm-ing each file then linking all. Regardless, you need a virtual port simulator for this (to simulate playing/chatting on two different computers)
+  <br> <h4> <b> That's why, alternatively </b> You can simply just run Titanic.asm: (Both players on the same computer): <br> </h4>
+  ♠️ Open the emulator and type <b>tasm Titanic.asm</b><br>
+  ♣️ Then type <b>link Titanic</b><br>
+  ♥️ Now type <b>Titanic</b>, Voila.
+</p> 
+
+<h2 align='center'>🎮 Gameplay 🎮 </h2>
+<div align='center'>
+  <b> Level I - Sunny Day </b> <br>
+   <img  src="/Graphics/Screenshots/L1.gif" title="All rights resrved." width='600' >
+  <br>
+  <b> Level II - Sea Storm </b> <br>
+   <img  src="/Graphics/Screenshots/L2.gif" title="All rights resrved." width='600' >
+ </div>
+ <h2 align='center'>Thank You. 💖 </h2>
+

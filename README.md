@@ -37,9 +37,9 @@ Two lost ships, at the heart of the Atlantic, seeking the same purpose confront 
    <img  src="/Graphics/Screenshots/L2.gif" title="All rights resrved." width='600' >
  </div>
  
- ### Collaborators
+ <h2 align='center'>⭐ Collaborators ⭐ </h2>
 <!-- readme: collaborators -start -->
-<table>
+<table align="center">
 <tr>
     <td align="center">
         <a href="https://github.com/EssamWisam">

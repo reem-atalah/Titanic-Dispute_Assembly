@@ -39,7 +39,7 @@ Two lost ships, at the heart of the Atlantic, seeking the same purpose confront 
  
  <h2 align='center'>⭐ Collaborators ⭐ </h2>
 <!-- readme: collaborators -start -->
-<table align="center">
+<table>
 <tr>
     <td align="center">
         <a href="https://github.com/EssamWisam">
@@ -52,7 +52,7 @@ Two lost ships, at the heart of the Atlantic, seeking the same purpose confront 
         <a href="https://github.com/reem-atalah">
             <img src="https://avatars.githubusercontent.com/u/55799245?v=4" width="100;" alt="reem-atalah"/>
             <br />
-            <sub><b>reem-atalah</b></sub>
+            <sub><b>Reem-atalah</b></sub>
         </a>
     </td>
     <td align="center">

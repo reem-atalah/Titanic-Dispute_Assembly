@@ -36,5 +36,12 @@ Two lost ships, at the heart of the Atlantic, seeking the same purpose confront 
    In <b>level II</b> cannonballs are faster and waves hurt and slow down the shields upon impact.  <br> <br> 
    <img  src="/Graphics/Screenshots/L2.gif" title="All rights resrved." width='600' >
  </div>
+ 
+ ### Collaborators
+<!-- readme: collaborators -start -->
+<!-- readme: collaborators -end -->
+
  <h2 align='center'>Thank You. 💖 </h2>
+ 
+ 
 
